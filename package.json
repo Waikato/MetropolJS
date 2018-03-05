@@ -1,0 +1,39 @@
+{
+    "name": "metropoljs",
+    "version": "0.0.1",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "start:dev": "parcel --no-hmr -p 8080 --https src/index.html",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "check": "gts check",
+        "clean": "gts clean",
+        "compile": "tsc -p .",
+        "fix": "gts fix",
+        "prepare": "npm run compile",
+        "pretest": "npm run compile",
+        "posttest": "npm run check"
+    },
+    "author": "Joshua Scarsbrook",
+    "license": "Apache-2.0",
+    "devDependencies": {
+        "@types/acorn": "^4.0.3",
+        "@types/estree": "^0.0.38",
+        "@types/esprima": "^4.0.1",
+        "@types/node": "^9.4.6",
+        "@types/three": "^0.89.10",
+        "@types/ws": "^4.0.1",
+        "gts": "^0.5.3",
+        "parcel-bundler": "^1.6.2",
+        "typescript": "~2.6.1"
+    },
+    "dependencies": {
+        "acorn": "^5.2.1",
+        "esprima": "^4.0.0",
+        "chrome-remote-debug-protocol": "^1.2.20170721",
+        "isomorphic-ws": "^4.0.0",
+        "noice-json-rpc": "^1.1.1",
+        "three": "^0.90.0",
+        "ws": "^4.1.0"
+    }
+}
