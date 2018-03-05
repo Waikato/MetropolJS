@@ -22,6 +22,8 @@ interface ModelLayer extends RenderGroup {
   // exportObj(): string;
 }
 
+const USE_LIGHTING = true;
+
 const DYNAMIC_INITIAL_LENGTH = 4096;
 
 const VERTEX_SHADER_SOURCE: string =
@@ -277,57 +279,7 @@ class BufferGeometryModelLayer implements ModelLayer {
     return this.positions.count();
   }
 
-  // exportPly(): string {
-  //   const verts: string[] = [];
-  //   for (let i = 0; i < this.positions.count(); i += 3) {
-  //     verts.push(`${this.positions.get(i + 0)} ${this.positions.get(i + 1)}
-  //     ${
-  //         this.positions.get(i + 2)}`);
-  //   }
-
-  //   const faces =
-  //       this.faces.map((face) => `3 ${face[0]} ${face[1]} ${face[2]}`);
-
-  //   const ret: string = `ply
-  // format ascii 1.0
-  // element vertex ${verts.length}
-  // property float x
-  // property float y
-  // property float z
-  // element face ${faces.length}
-  // property list uchar int vertex_index
-  // end_header
-  // ` + verts.join('\n') +
-  //       '\n' + faces.join('\n');
-
-  //   return ret;
-  // }
-
-  // exportObj(): string {
-  //   const verts: string[] = [];
-
-  //   for (let i = 0; i < this.positions.count(); i += 3) {
-  //     verts.push(
-  //         `v ` +
-  //         `${this.positions.get(i + 0)} ` +
-  //         `${this.positions.get(i + 1)} ` +
-  //         `${this.positions.get(i + 2)} 0 ` +
-  //         `${this.colors.get(i + 0) / 255} ` +
-  //         `${this.colors.get(i + 1) / 255} ` +
-  //         `${this.colors.get(i + 2) / 255}`);
-  //   }
-
-  //   const faces = this.faces.map(
-  //       (face) => `f ${face[0] + 1} ` +
-  //           `${face[1] + 1} ` +
-  //           `${face[2] + 1}`);
-
-  //   const ret = `${verts.join('\n')}\n${faces.join('\n')}`;
-
-  //   return ret;
-  // }
-
-  private updateFaceColor(index: number, color: THREE.Color): void {
+  protected updateFaceColor(index: number, color: THREE.Color): void {
     this.faces[index].forEach((vertexIndex) => {
       this.colors.set([color.r, color.g, color.b], vertexIndex * 3);
       this.alpha.set([1.0], vertexIndex);
@@ -338,15 +290,91 @@ class BufferGeometryModelLayer implements ModelLayer {
   }
 }
 
+class WallModelLayer extends BufferGeometryModelLayer {
+  constructor(owner: MultiLayerModel, depth: number) {
+    super(owner, depth, false, 1.0);
+  }
+
+  emitVertex(location: THREE.Vector3, color?: THREE.Color): number {
+    const vertexIndex = super.emitVertex(location, color);
+    super.emitVertex(location.clone().setZ(-1), color);
+    return vertexIndex;
+  }
+
+  emitRectangle(
+      frontLeftVertex: number, frontRightVertex: number, backLeftVertex: number,
+      backRightVertex: number, color?: THREE.Color): number {
+    const topFrontLeft = (frontLeftVertex * 2);
+    const bottomFrontLeft = topFrontLeft + 1;
+
+    const topFrontRight = (frontRightVertex * 2);
+    const bottomFrontRight = topFrontRight + 1;
+
+    const topBackLeft = (backLeftVertex * 2);
+    const bottomBackLeft = topBackLeft + 1;
+
+    const topBackRight = (backRightVertex * 2);
+    const bottomBackRight = topBackRight + 1;
+
+    // front (topFrontLeft, topFrontRight, bottomFrontRight, bottomFrontLeft)
+    const updateIndex = this._emitRectangle(
+        topFrontLeft, topFrontRight, bottomFrontRight, bottomFrontLeft, true,
+        false, color);
+
+    // back (topBackLeft, topBackRight, bottomBackRight, bottomBackLeft)
+    this._emitRectangle(
+        topBackLeft, topBackRight, bottomBackRight, bottomBackLeft, false, true,
+        color);
+
+    // left (topFrontLeft, topBackLeft, bottomBackLeft, bottomFrontLeft)
+    this._emitRectangle(
+        topFrontLeft, topBackLeft, bottomBackLeft, bottomFrontLeft, false, true,
+        color);
+
+    // right (topFrontRight, topBackRight, bottomBackRight, bottomFrontRight)
+    this._emitRectangle(
+        topFrontRight, topBackRight, bottomBackRight, bottomFrontRight, true,
+        false, color);
+
+    return updateIndex;
+  }
+
+  updateGeometryColor(index: number, color: THREE.Color): void {}
+
+  private _emitRectangle(
+      topLeftVert: number, topRightVert: number, bottomLeftVert: number,
+      bottomRightVert: number, flipOne: boolean, flipTwo: boolean,
+      color?: THREE.Color): number {
+    let updateIndex = 0;
+
+    if (flipOne) {
+      updateIndex =
+          super.emitTriangle(bottomLeftVert, topRightVert, topLeftVert, color);
+    } else {
+      updateIndex =
+          super.emitTriangle(topLeftVert, topRightVert, bottomLeftVert, color);
+    }
+
+    if (flipTwo) {
+      super.emitTriangle(bottomLeftVert, bottomRightVert, topLeftVert, color);
+    } else {
+      super.emitTriangle(topLeftVert, bottomRightVert, bottomLeftVert, color);
+    }
+
+    return updateIndex;
+  }
+}
+
 class BorderedRectangleModelLayer implements ModelLayer {
   private group: THREE.Group = new THREE.Group();
 
   private solidLayer: ModelLayer;
   private lineLayer: ModelLayer;
+  private wallLayer: WallModelLayer;
 
   constructor(private owner: MultiLayerModel, private depth: number) {
     this.solidLayer =
-        new BufferGeometryModelLayer(this.owner, this.depth, false, 0.2);
+        new BufferGeometryModelLayer(this.owner, this.depth, false, 1.0);
 
     const solidGroup = this.solidLayer.getRenderGroup();
     solidGroup.position.z = -0.00001;
@@ -356,31 +384,35 @@ class BorderedRectangleModelLayer implements ModelLayer {
     this.lineLayer =
         new BufferGeometryModelLayer(this.owner, this.depth, true, 1.0);
     this.group.add(this.lineLayer.getRenderGroup());
+
+    this.wallLayer = new WallModelLayer(this.owner, this.depth);
+    this.group.add(this.wallLayer.getRenderGroup());
   }
 
   emitVertex(location: THREE.Vector3, color?: THREE.Color): number {
     this.solidLayer.emitVertex(location, color);
+    this.wallLayer.emitVertex(location, color);
     return this.lineLayer.emitVertex(location, color);
   }
 
   emitTriangle(a: number, b: number, c: number, color?: THREE.Color): number {
-    this.solidLayer.emitTriangle(a, b, c, color);
-    return this.lineLayer.emitTriangle(a, b, c, color);
+    throw new Error('Not Implemented');
   }
 
   emitRectangle(
       a: number, b: number, c: number, d: number, color?: THREE.Color): number {
     this.solidLayer.emitRectangle(a, b, c, d, color);
+    this.wallLayer.emitRectangle(a, b, c, d, color);
     return this.lineLayer.emitRectangle(a, b, c, d, color);
   }
 
   emitLine(a: number, b: number, color?: THREE.Color): number {
-    this.solidLayer.emitLine(a, b, color);
-    return this.lineLayer.emitLine(a, b, color);
+    throw new Error('Not Implemented');
   }
 
   updateGeometryColor(index: number, color: THREE.Color): void {
     this.lineLayer.updateGeometryColor(index, color);
+    this.wallLayer.updateGeometryColor(index, color);
     this.solidLayer.updateGeometryColor(index / 2, color);
   }
 
@@ -390,25 +422,20 @@ class BorderedRectangleModelLayer implements ModelLayer {
 
   setOpacity(opacity: number): void {
     this.lineLayer.setOpacity(opacity);
+    this.wallLayer.setOpacity(opacity);
     this.solidLayer.setOpacity(opacity);
   }
 
   setVisible(visible: boolean): void {
     this.lineLayer.setVisible(visible);
+    this.wallLayer.setVisible(visible);
     this.solidLayer.setVisible(visible);
   }
 
   getVertexCount(): number {
-    return this.lineLayer.getVertexCount() + this.solidLayer.getVertexCount();
+    return this.lineLayer.getVertexCount() + this.wallLayer.getVertexCount() +
+        this.solidLayer.getVertexCount();
   }
-
-  // exportPly(): string {
-  //   return this.solidLayer.exportPly();
-  // }
-
-  // exportObj(): string {
-  //   return this.solidLayer.exportObj();
-  // }
 }
 
 /**
@@ -432,19 +459,26 @@ export class MultiLayerModel implements RenderGroup {
   private material: THREE.Material;
 
   constructor() {
-    this.material = new THREE.ShaderMaterial({
-      vertexShader: VERTEX_SHADER_SOURCE,
-      fragmentShader: FRAGMENT_SHADER_SOURCE,
-      transparent: true,
-      vertexColors: THREE.VertexColors,
-      opacity: 0.5,
-      uniforms: {}
-    });
+    if (USE_LIGHTING) {
+      this.material = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        vertexColors: THREE.VertexColors,
+      });
+    } else {
+      this.material = new THREE.ShaderMaterial({
+        vertexShader: VERTEX_SHADER_SOURCE,
+        fragmentShader: FRAGMENT_SHADER_SOURCE,
+        transparent: true,
+        vertexColors: THREE.VertexColors,
+        opacity: 0.5,
+        uniforms: {}
+      });
+    }
 
     this.model = new THREE.Group();
   }
 
-  getMaterial() {
+  getMaterial(): THREE.Material {
     return this.material;
   }
 

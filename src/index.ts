@@ -12,5 +12,5 @@ document.addEventListener('DOMContentLoaded', () => {
   metropolJS.attachTo(mainElement);
 
   metropolJS.connect(
-      'v8://ws://localhost:9223/devtools/page/6F4F2D21CE07244A2976FB3229BF6ED6');
+      'v8://ws://localhost:9229/devtools/page/(5B90636744045C2E1E78CFBFCEC37ACB)');
 });

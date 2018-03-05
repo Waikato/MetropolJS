@@ -6,6 +6,7 @@ export enum RendererColors {
   Rainbow,
   XRay,
   Random,
+  Grey
 }
 
 export class ScriptColorMap {
@@ -17,7 +18,7 @@ export class ScriptColorMap {
   /**
    * The color scheme to use for rendering.
    */
-  private currentColors: RendererColors = RendererColors.XRay;
+  private currentColors: RendererColors = RendererColors.Grey;
 
   /**
    * Get the current color scheme being used.
@@ -69,6 +70,8 @@ export class ScriptColorMap {
       return new THREE.Color(Math.random(), Math.random(), Math.random());
     } else if (this.currentColors === RendererColors.Rainbow) {
       return new THREE.Color('hsl(' + (layer * 30).toString(10) + ',90%,50%)');
+    } else if (this.currentColors === RendererColors.Grey) {
+      return new THREE.Color(0.4, 0.4, 0.4);
     } else {
       return new THREE.Color(0xffffff);
     }

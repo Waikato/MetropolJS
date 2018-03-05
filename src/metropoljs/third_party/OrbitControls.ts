@@ -29,7 +29,7 @@ export class OrbitControls extends THREE.EventDispatcher {
   enabled = true;
 
   // "target" sets the location of focus, where the object orbits around
-  target = new THREE.Vector3();
+  target: THREE.Vector3 = new THREE.Vector3();
 
   // How far you can dolly in and out ( PerspectiveCamera only )
   minDistance = 0;
@@ -81,15 +81,15 @@ export class OrbitControls extends THREE.EventDispatcher {
   keys = {LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40};
 
   // Mouse buttons
-  mouseButtons = {
+  mouseButtons: {[s: string]: THREE.MOUSE} = {
     ORBIT: THREE.MOUSE.LEFT,
     ZOOM: THREE.MOUSE.MIDDLE,
     PAN: THREE.MOUSE.RIGHT
   };
 
   // for reset
-  target0 = this.target.clone();
-  position0 = this.object.position.clone();
+  target0: THREE.Vector3 = this.target.clone();
+  position0: THREE.Vector3 = this.object.position.clone();
   zoom0 = this.object.zoom;
 
   // Update Private members

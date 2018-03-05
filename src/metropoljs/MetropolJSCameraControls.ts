@@ -13,7 +13,7 @@ export class MetropolJSCameraControls {
     const width = 512;
     const height = 512;
 
-    if (false) {
+    if (Math.pow(2, 2) === 2) {
       this.camera = new THREE.OrthographicCamera(-1, 1, -1, 1, 0.1, 2000);
     } else {
       this.camera = new THREE.PerspectiveCamera(50, 1, 0.1, 2000);
