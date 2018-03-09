@@ -25,7 +25,7 @@ code bases.
   yarn
   ```
 3. Start either Google Chrome with Remote Debugging or nodejs with the inspector enabled and copy the Websocket URL from the command line.
-4. Create a copy of the example config file `dist/config.example.js` and place it in the `dist` directory as `config.js`. Documentation is in the [Config File](#Config_File) section.
+4. Create a copy of the example config file `dist/config.example.js` and place it in the `dist` directory as `config.js`. Documentation is in the [Config File](#config-file) section.
 5. Start the development server and compile the code. This is powered by [Parcel](https://parceljs.org/).
   ```bash
   yarn start:dev
@@ -87,4 +87,4 @@ Publication is currently pending at ICPC2018.
 
 ## Licence
 
-MetropolJS is licensed under the Apache 2.0 Licence in [LICENCE](LICENCE).
+MetropolJS is licensed under the Apache 2.0 License in [LICENSE](LICENSE).
