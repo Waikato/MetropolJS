@@ -3,7 +3,7 @@
 
 import * as THREE from 'three';
 
-import {expect, Rectangle, RenderGroup} from '../common';
+import {DebugSource, expect, Rectangle, RenderGroup} from '../common';
 import {Config} from '../Config';
 
 export interface RectangleUpdatePointer {
@@ -565,7 +565,7 @@ class BorderedRectangleModelLayer implements ModelLayer {
  * Container class and abstract interface for a model with a series of different
  * layers.
  */
-export class MultiLayerModel implements RenderGroup {
+export class MultiLayerModel implements RenderGroup, DebugSource {
   /**
    * The list of layers currently in this model.
    */
@@ -693,6 +693,12 @@ export class MultiLayerModel implements RenderGroup {
     for (let i = 0; i < this.layers.length; i++) {
       this.layers[i].setVisible(i < layer);
     }
+  }
+
+  debug() {
+    console.groupCollapsed('MultiLayerModel');
+    console.log('totalVertexes', this.getVertexCount());
+    console.groupEnd();
   }
 
   /**

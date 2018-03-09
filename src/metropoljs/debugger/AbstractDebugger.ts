@@ -1,5 +1,6 @@
 import * as estree from 'estree';
 import {EventEmitter} from 'events';
+import {DebugSource} from '../common';
 
 export interface ScriptLoadedEvent {
   dbg: AbstractDebugger;
@@ -16,10 +17,12 @@ export interface ScriptStepNotifyEvent {
   count: number;
 }
 
-export abstract class AbstractDebugger {
+export abstract class AbstractDebugger implements DebugSource {
   constructor() {}
 
   abstract async start(): Promise<never>;
 
   abstract getParsedScript(scriptId: string): estree.Program;
+
+  abstract debug(): void;
 }

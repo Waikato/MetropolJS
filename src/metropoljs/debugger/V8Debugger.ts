@@ -118,11 +118,6 @@ export class V8Debugger extends AbstractDebugger {
   }
 
   async start(): Promise<never> {
-    setInterval(() => {
-      console.log('notified steps', this.notifiedSteps);
-      this.notifiedSteps = 0;
-    }, 1000);
-
     while (true) {
       await this.step();
     }
@@ -136,6 +131,11 @@ export class V8Debugger extends AbstractDebugger {
     } else {
       throw new Error('Script Not loaded');
     }
+  }
+
+  debug(): void {
+    console.groupCollapsed('V8Debugger');
+    console.groupEnd();
   }
 
   private notifyStep(

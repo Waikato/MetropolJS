@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import {Bag} from './common';
+import {Bag, DebugSource} from './common';
 
 export enum RendererColors {
   Rainbow,
@@ -9,7 +9,62 @@ export enum RendererColors {
   Grey
 }
 
-export class ScriptColorMap {
+const defaultColorMap: Bag<string> = {
+  'ExpressionStatement': '000000',
+  'undefined': '000000',
+  'Literal': '161c1a',
+  'FunctionExpression': '161c1a',
+  'Identifier': '2d3834',
+  'BlockStatement': '2d3834',
+  'FunctionDeclaration': '44544f',
+  'VariableDeclaration': '44544f',
+  'IfStatement': '44544f',
+  'ClassDeclaration': '44544f',
+  'VariableDeclarator': '5b7069',
+  'AssignmentExpression': '5b7069',
+  'MemberExpression': '5b7069',
+  'CallExpression': '5b7069',
+  'ClassBody': '5b7069',
+  'RestElement': '5b7069',
+  'UnaryExpression': '5b7069',
+  'ForOfStatement': '728c83',
+  'ReturnStatement': '728c83',
+  'ForStatement': '728c83',
+  'TryStatement': '728c83',
+  'ObjectExpression': '728c83',
+  'ArrayExpression': '728c83',
+  'WhileStatement': '728c83',
+  'ArrowFunctionExpression': '728c83',
+  'ObjectPattern': '728c83',
+  'MethodDefinition': '728c83',
+  'BinaryExpression': '728c83',
+  'LogicalExpression': '728c83',
+  'ConditionalExpression': '728c83',
+  'SwitchStatement': '728c83',
+  'ThrowStatement': '728c83',
+  'ForInStatement': '728c83',
+  'NewExpression': '728c83',
+  'TemplateLiteral': '728c83',
+  'UpdateExpression': '8ea39c',
+  'Property': '8ea39c',
+  'SequenceExpression': '8ea39c',
+  'CatchClause': '5b7069',
+  'SwitchCase': '8ea39c',
+  'ClassExpression': '8ea39c',
+  'TemplateElement': '8ea39c',
+  'ThisExpression': 'aabab5',
+  'ArrayPattern': 'aabab5',
+  'BreakStatement': 'aabab5',
+  'AssignmentPattern': 'aabab5',
+  'DoWhileStatement': 'aabab5',
+  'ContinueStatement': 'c6d1cd',
+  'EmptyStatement': '8ea39c',
+  'MetaProperty': 'c6d1cd',
+  'Super': 'ffffff',
+  'SpreadElement': 'ffffff'
+};
+
+export class ScriptColorMap implements DebugSource {
   /**
    * A map to convert a node type into a color.
    */
@@ -20,13 +75,19 @@ export class ScriptColorMap {
    */
   private currentColors: RendererColors = RendererColors.XRay;
 
+  constructor() {
+    Object.keys(defaultColorMap).forEach((key) => {
+      this.colorMap.set(key, new THREE.Color('#' + defaultColorMap[key]));
+    });
+  }
+
   /**
    * Get the current color scheme being used.
    */
-  getColorMap(): Bag<number[]> {
-    const ret: Bag<number[]> = {};
+  getColorMap(): Bag<string> {
+    const ret: Bag<string> = {};
     this.colorMap.forEach((value, key) => {
-      ret[key] = value.toArray();
+      ret[key] = value.getHexString();
     });
     return ret;
   }
@@ -58,6 +119,12 @@ export class ScriptColorMap {
     } else {
       return null;
     }
+  }
+
+  debug() {
+    console.groupCollapsed('ScriptColorMap');
+    console.log('colorMap', this.getColorMap());
+    console.groupEnd();
   }
 
   /**

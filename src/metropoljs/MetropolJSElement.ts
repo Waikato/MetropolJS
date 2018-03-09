@@ -1,6 +1,8 @@
 import 'stats.js';
+
 import * as THREE from 'three';
 
+import {DebugSource} from './common';
 import {Config} from './Config';
 import {EventBus} from './EventBus';
 import {MetropolJSCameraControls} from './MetropolJSCameraControls';
@@ -13,7 +15,7 @@ import {SSAOPass} from './third_party/SSAOPass';
  * Base element for MetropolJS. Owns the user interface and renderer. Contains a
  * reference to a MetropolJSSession which controls loaded scripts.
  */
-export class MetropolJSElement {
+export class MetropolJSElement implements DebugSource {
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene;
   private controls: MetropolJSCameraControls;
@@ -84,6 +86,16 @@ export class MetropolJSElement {
 
   async connect(connectionString: string) {
     await this.session.connectDebugger(connectionString);
+  }
+
+  debug() {
+    console.groupCollapsed('MetropolJSElement');
+
+    this.controls.debug();
+    this.session.debug();
+    this.eventBus.debug();
+
+    console.groupEnd();
   }
 
   private onResize() {

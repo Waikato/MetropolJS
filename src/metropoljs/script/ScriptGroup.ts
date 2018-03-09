@@ -1,7 +1,7 @@
 import * as estree from 'estree';
 import * as THREE from 'three';
 
-import {countNodeChildren, expect, RenderGroup} from '../common';
+import {countNodeChildren, DebugSource, expect, RenderGroup} from '../common';
 import {ScriptLoadedEvent, ScriptStepNotifyEvent} from '../debugger/AbstractDebugger';
 import {EventBus} from '../EventBus';
 import {ScriptColorMap} from '../ScriptColorMap';
@@ -9,7 +9,7 @@ import {ScriptColorMap} from '../ScriptColorMap';
 import {ScriptLayout} from './ScriptLayout';
 import {RenderScript, ScriptModel} from './ScriptModel';
 
-export class ScriptGroup implements RenderGroup {
+export class ScriptGroup implements RenderGroup, DebugSource {
   private loadedScripts: Map<string, ScriptModel> = new Map();
 
   private group: THREE.Group = new THREE.Group();
@@ -24,8 +24,6 @@ export class ScriptGroup implements RenderGroup {
     setInterval(() => {
       this.mergeScripts();
     }, 5000);
-
-    this.group.rotation.x = -(Math.PI / 2);
   }
 
   connectBus() {
@@ -43,6 +41,33 @@ export class ScriptGroup implements RenderGroup {
 
   getRenderGroup(): THREE.Group {
     return this.group;
+  }
+
+  getVertexCount() {
+    let total = 0;
+    const uniqueScripts: Set<ScriptModel> = new Set();
+    this.loadedScripts.forEach((scr) => {
+      if (!uniqueScripts.has(scr)) {
+        total += scr.getVertexCount();
+        uniqueScripts.add(scr);
+      }
+    });
+    return total;
+  }
+
+  debug(): void {
+    console.groupCollapsed('ScriptGroup');
+    console.log('loadedScriptCount', this.loadedScriptCount);
+    console.log('totalVertexCount', this.getVertexCount());
+    this.colorMap.debug();
+    const uniqueScripts: Set<ScriptModel> = new Set();
+    this.loadedScripts.forEach((scr) => {
+      if (!uniqueScripts.has(scr)) {
+        scr.debug();
+        uniqueScripts.add(scr);
+      }
+    });
+    console.groupEnd();
   }
 
   private onScriptLoaded(ev: ScriptLoadedEvent) {
@@ -106,8 +131,6 @@ export class ScriptGroup implements RenderGroup {
   }
 
   private mergeScripts() {
-    console.log('Begin Merge');
-
     const scripts: RenderScript[] = [];
 
     this.loadedScripts.forEach((script, scriptId) => {
@@ -125,8 +148,6 @@ export class ScriptGroup implements RenderGroup {
     });
 
     const newModel = new ScriptModel(this.eventBus, this.colorMap);
-
-    console.log('Begin Render', scripts.length);
 
     newModel.fastRenderMergedTree(scripts);
 

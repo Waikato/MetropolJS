@@ -29,6 +29,13 @@ function onLoadedConfig() {
   onLoadedConfig();
 };
 
+(window as any).metropolJSDebug = function() {
+  if (!metropolJS) {
+    throw new Error('Not initialized');
+  }
+  metropolJS.debug();
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Loading Config');
   fetch('/dist/config.js').then((resp) => resp.text()).then((config) => {

@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 
+import {DebugSource} from './common';
 import {Config} from './Config';
 import {EventBus} from './EventBus';
 import {OrbitControls} from './third_party/OrbitControls';
 
-export class MetropolJSCameraControls {
+export class MetropolJSCameraControls implements DebugSource {
   private camera: THREE.OrthographicCamera|THREE.PerspectiveCamera;
 
   private orbitControls: OrbitControls;
@@ -27,8 +28,6 @@ export class MetropolJSCameraControls {
 
     this.orbitControls = new OrbitControls(this.camera, document);
 
-    this.orbitControls.rotateUp((Math.PI / 2));
-
     if (!configObject.rendering['3d_mode']) {
       this.orbitControls.enableRotate = false;
     }
@@ -48,5 +47,10 @@ export class MetropolJSCameraControls {
 
   getCamera(): THREE.OrthographicCamera|THREE.PerspectiveCamera {
     return this.camera;
+  }
+
+  debug(): void {
+    console.groupCollapsed('MetropolJSCameraControls');
+    console.groupEnd();
   }
 }

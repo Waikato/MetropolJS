@@ -153,6 +153,27 @@ export class ScriptModel implements RenderGroup {
     }
   }
 
+  getVertexCount(): number {
+    if (!this.model) {
+      return 0;
+    }
+    return this.model.getVertexCount();
+  }
+
+  debug() {
+    console.groupCollapsed('ScriptModel');
+    if (this.model) {
+      console.log('vertexCount', this.model.getVertexCount());
+      this.model.debug();
+    }
+    this.scriptList.forEach((scr) => {
+      console.groupCollapsed('Script', scr.scriptId);
+      console.log('totalNodeCount', countNodeChildren(scr.program));
+      console.groupEnd();
+    });
+    console.groupEnd();
+  }
+
   private computeNodeColor(tree: RenderTree): THREE.Color {
     const colorA = this.colorMap.getColorFromType(tree.type, tree.depth);
     const colorB = tree.getOverlayColor();

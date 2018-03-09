@@ -1,4 +1,4 @@
-import {RenderGroup} from './common';
+import {DebugSource, RenderGroup} from './common';
 import {AbstractDebugger} from './debugger/AbstractDebugger';
 import {V8Debugger} from './debugger/V8Debugger';
 import {EventBus} from './EventBus';
@@ -8,8 +8,8 @@ import {ScriptGroup} from './script/ScriptGroup';
  * A debugging session. Contains a reference to a ScriptGroup and
  * owns the Debugger instance.
  */
-export class MetropolJSSession implements RenderGroup {
-  private debugInstance: AbstractDebugger|null = null;
+export class MetropolJSSession implements RenderGroup, DebugSource {
+  private debuggerInstance: AbstractDebugger|null = null;
   private scriptGroup: ScriptGroup;
 
   constructor(private eventBus: EventBus) {
@@ -24,7 +24,7 @@ export class MetropolJSSession implements RenderGroup {
     if (target.startsWith('v8://')) {
       const newDebugger = new V8Debugger(this.eventBus);
 
-      this.debugInstance = newDebugger;
+      this.debuggerInstance = newDebugger;
 
       await newDebugger.connect(target.slice(5));
 
@@ -35,5 +35,14 @@ export class MetropolJSSession implements RenderGroup {
     } else {
       throw new Error('Debugger connection string not recognized');
     }
+  }
+
+  debug(): void {
+    console.groupCollapsed('MetropolJSSession');
+    if (this.debuggerInstance) {
+      this.debuggerInstance.debug();
+    }
+    this.scriptGroup.debug();
+    console.groupEnd();
   }
 }

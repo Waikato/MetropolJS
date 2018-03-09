@@ -77,3 +77,5 @@ export function countNodeChildren(node: estree.Node): number {
 }
 
 export interface RenderGroup { getRenderGroup(): THREE.Group; }
+
+export interface DebugSource { debug(): void; }
