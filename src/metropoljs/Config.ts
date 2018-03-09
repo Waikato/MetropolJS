@@ -1,4 +1,4 @@
-interface ConfigObject {
+export interface ConfigObject {
   // Debugger options
   debugger: {
     // The type of debugger to connect to ('v8').
@@ -6,11 +6,15 @@ interface ConfigObject {
 
     // The connection string to use for the debugger (string).
     // For V8 this will be a websocket URL.
-    'connect': 'ws://localhost:9229/';
+    'connect': string;
   };
 
   // Rendering options
   rendering: {
+    // Should the camera be set for top down pan and zoom or full orbit controls
+    // (true|false).
+    '3d_mode': boolean,
+
     // Should the layers be extruded so that walls can be added?
     // (true|false).
     'city_mode': boolean;
@@ -36,4 +40,37 @@ interface ConfigObject {
   };
 }
 
-export class Config { obj: ConfigObject; }
+export class Config {
+  private obj: ConfigObject = {
+    'debugger': {
+      'type': 'v8',
+      'connect': 'ws://localhost:9229/',
+    },
+    'rendering': {
+      '3d_mode': false,
+      'city_mode': false,
+      'render_walls': false,
+      'render_borders': false,
+      'render_solid': true,
+    },
+
+    'quality': {
+      'enable_lighting': true,
+      'enable_ssao': true,
+    }
+  };
+
+  setConfig(obj: ConfigObject) {
+    this.obj = obj;
+  }
+
+  getConfig(): ConfigObject {
+    return this.obj;
+  }
+
+  static getInstance() {
+    return configInstance;
+  }
+}
+
+const configInstance = new Config();

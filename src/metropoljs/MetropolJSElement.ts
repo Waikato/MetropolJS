@@ -1,14 +1,12 @@
 import * as THREE from 'three';
 
+import {Config} from './Config';
 import {EventBus} from './EventBus';
 import {MetropolJSCameraControls} from './MetropolJSCameraControls';
 import {MetropolJSSession} from './MetropolJSSession';
 import {EffectComposer} from './third_party/EffectComposer';
 import {RenderPass} from './third_party/RenderPass';
 import {SSAOPass} from './third_party/SSAOPass';
-
-const USE_LIGHTING = true;
-const USE_SSAO = false;
 
 /**
  * Base element for MetropolJS. Owns the user interface and renderer. Contains a
@@ -28,9 +26,11 @@ export class MetropolJSElement {
   private effectComposer: EffectComposer|null = null;
 
   constructor(private ownerDocument: Document) {
+    const configObject = Config.getInstance().getConfig();
+
     this.eventBus = new EventBus();
 
-    this.renderer = new THREE.WebGLRenderer();
+    this.renderer = new THREE.WebGLRenderer({antialias: true});
     this.scene = new THREE.Scene();
     this.controls = new MetropolJSCameraControls(this.eventBus);
 
@@ -38,12 +38,12 @@ export class MetropolJSElement {
 
     this.scene.add(this.session.getRenderGroup());
 
-    if (USE_LIGHTING) {
+    if (configObject.quality.enable_lighting) {
       const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
       this.scene.add(ambientLight);
     }
 
-    if (USE_SSAO) {
+    if (configObject.quality.enable_ssao) {
       const renderPass = new RenderPass(this.scene, this.controls.getCamera());
 
       const ssaoPass = new SSAOPass(this.scene, this.controls.getCamera());
@@ -87,7 +87,7 @@ export class MetropolJSElement {
     this.renderer.setSize(
         this.ownerElement.clientWidth, this.ownerElement.clientHeight);
 
-    if (this.effectComposer && USE_SSAO) {
+    if (this.effectComposer) {
       this.effectComposer.setSize(
           this.ownerElement.clientWidth, this.ownerElement.clientHeight);
     }
@@ -97,7 +97,7 @@ export class MetropolJSElement {
   }
 
   private update() {
-    if (this.effectComposer && USE_SSAO) {
+    if (this.effectComposer) {
       this.effectComposer.render();
     } else {
       this.renderer.render(this.scene, this.controls.getCamera());

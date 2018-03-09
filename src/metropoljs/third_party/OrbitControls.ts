@@ -165,17 +165,17 @@ export class OrbitControls extends THREE.EventDispatcher {
 
   getPolarAngle() {
     return this.spherical.phi;
-  };
+  }
 
   getAzimuthalAngle() {
     return this.spherical.theta;
-  };
+  }
 
   saveState() {
     this.target0.copy(this.target);
     this.position0.copy(this.object.position);
     this.zoom0 = this.object.zoom;
-  };
+  }
 
   reset() {
     this.target.copy(this.target0);
@@ -188,12 +188,43 @@ export class OrbitControls extends THREE.EventDispatcher {
     this.update();
 
     this.state = OrbitControlsState.NONE;
-  };
+  }
 
+  dispose() {
+    this.domElement.removeEventListener(
+        'contextmenu', this.onContextMenu.bind(this), false);
+    this.domElement.removeEventListener(
+        'mousedown', this.onMouseDown.bind(this), false);
+    this.domElement.removeEventListener(
+        'wheel', this.onMouseWheel.bind(this), false);
 
-  // this method is exposed, but perhaps it would be better if we can make it
-  // private...
-  update() {
+    this.domElement.removeEventListener(
+        'touchstart', this.onTouchStart.bind(this), false);
+    this.domElement.removeEventListener(
+        'touchend', this.onTouchEnd.bind(this), false);
+    this.domElement.removeEventListener(
+        'touchmove', this.onTouchMove.bind(this), false);
+
+    document.removeEventListener(
+        'mousemove', this.onMouseMove.bind(this), false);
+    document.removeEventListener('mouseup', this.onMouseUp.bind(this), false);
+
+    window.removeEventListener('keydown', this.onKeyDown.bind(this), false);
+
+    // this.dispatchEvent( { type: 'dispose' } ); // should this be added here?
+  }
+
+  rotateLeft(angle: number) {
+    this._rotateLeft(angle);
+    this.update();
+  }
+
+  rotateUp(angle: number) {
+    this._rotateUp(angle);
+    this.update();
+  }
+
+  private update() {
     var position = this.object.position;
 
     this.updateOffset.copy(position).sub(this.target);
@@ -205,7 +236,7 @@ export class OrbitControls extends THREE.EventDispatcher {
     this.spherical.setFromVector3(this.updateOffset);
 
     if (this.autoRotate && this.state === OrbitControlsState.NONE) {
-      this.rotateLeft(this.getAutoRotationAngle());
+      this._rotateLeft(this.getAutoRotationAngle());
     }
 
     this.spherical.theta += this.sphericalDelta.theta;
@@ -272,30 +303,6 @@ export class OrbitControls extends THREE.EventDispatcher {
     return false;
   }
 
-  dispose() {
-    this.domElement.removeEventListener(
-        'contextmenu', this.onContextMenu.bind(this), false);
-    this.domElement.removeEventListener(
-        'mousedown', this.onMouseDown.bind(this), false);
-    this.domElement.removeEventListener(
-        'wheel', this.onMouseWheel.bind(this), false);
-
-    this.domElement.removeEventListener(
-        'touchstart', this.onTouchStart.bind(this), false);
-    this.domElement.removeEventListener(
-        'touchend', this.onTouchEnd.bind(this), false);
-    this.domElement.removeEventListener(
-        'touchmove', this.onTouchMove.bind(this), false);
-
-    document.removeEventListener(
-        'mousemove', this.onMouseMove.bind(this), false);
-    document.removeEventListener('mouseup', this.onMouseUp.bind(this), false);
-
-    window.removeEventListener('keydown', this.onKeyDown.bind(this), false);
-
-    // this.dispatchEvent( { type: 'dispose' } ); // should this be added here?
-  };
-
   private getAutoRotationAngle() {
     return 2 * Math.PI / 60 / 60 * this.autoRotateSpeed;
   }
@@ -304,11 +311,11 @@ export class OrbitControls extends THREE.EventDispatcher {
     return Math.pow(0.95, this.zoomSpeed);
   }
 
-  private rotateLeft(angle: number) {
+  private _rotateLeft(angle: number) {
     this.sphericalDelta.theta -= angle;
   }
 
-  private rotateUp(angle: number) {
+  private _rotateUp(angle: number) {
     this.sphericalDelta.phi -= angle;
   }
 
@@ -433,13 +440,13 @@ export class OrbitControls extends THREE.EventDispatcher {
                                                         this.domElement;
 
     // rotating across whole screen goes 360 degrees around
-    this.rotateLeft(
+    this._rotateLeft(
         2 * Math.PI * this.rotateDelta.x / element.clientWidth *
         this.rotateSpeed);
 
     // rotating up and down along whole screen attempts to go 360, but limited
     // to 180
-    this.rotateUp(
+    this._rotateUp(
         2 * Math.PI * this.rotateDelta.y / element.clientHeight *
         this.rotateSpeed);
 
@@ -557,13 +564,13 @@ export class OrbitControls extends THREE.EventDispatcher {
                                                         this.domElement;
 
     // rotating across whole screen goes 360 degrees around
-    this.rotateLeft(
+    this._rotateLeft(
         2 * Math.PI * this.rotateDelta.x / element.clientWidth *
         this.rotateSpeed);
 
     // rotating up and down along whole screen attempts to go 360, but limited
     // to 180
-    this.rotateUp(
+    this._rotateUp(
         2 * Math.PI * this.rotateDelta.y / element.clientHeight *
         this.rotateSpeed);
 

@@ -14,6 +14,10 @@ loadMetropolJSConfig({
 
     // Rendering options
     'rendering': {
+        // Should the camera be set for top down pan and zoom or full orbit //
+        // controls (true|false).
+        '3d_mode': false,
+
         // Should the layers be extruded so that walls can be added? (true|false).
         'city_mode': false,
 

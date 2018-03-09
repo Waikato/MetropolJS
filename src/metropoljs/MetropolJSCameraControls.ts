@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
+import {Config} from './Config';
 import {EventBus} from './EventBus';
-
 import {OrbitControls} from './third_party/OrbitControls';
 
 export class MetropolJSCameraControls {
@@ -13,16 +13,25 @@ export class MetropolJSCameraControls {
     const width = 512;
     const height = 512;
 
-    if (Math.pow(2, 2) === 2) {
-      this.camera = new THREE.OrthographicCamera(-1, 1, -1, 1, 0.1, 2000);
+    const configObject = Config.getInstance().getConfig();
+
+    if (!configObject.rendering['3d_mode']) {
+      this.camera = new THREE.OrthographicCamera(-1, 1, -1, 1, 0.01, 2000);
     } else {
-      this.camera = new THREE.PerspectiveCamera(50, 1, 0.1, 2000);
+      this.camera = new THREE.PerspectiveCamera(50, 1, 0.01, 2000);
     }
+
     this.camera.position.z = 50;
     this.camera.zoom = 5;
     this.camera.updateProjectionMatrix();
 
     this.orbitControls = new OrbitControls(this.camera, document);
+
+    this.orbitControls.rotateUp((Math.PI / 2));
+
+    if (!configObject.rendering['3d_mode']) {
+      this.orbitControls.enableRotate = false;
+    }
   }
 
   resize(width: number, height: number) {

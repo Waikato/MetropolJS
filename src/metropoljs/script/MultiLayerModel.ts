@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 
 import {expect, Rectangle, RenderGroup} from '../common';
+import {Config} from '../Config';
 
 export interface RectangleUpdatePointer {
   a: number;
@@ -33,8 +34,6 @@ interface ModelLayer extends RenderGroup {
   // exportPly(): string;
   // exportObj(): string;
 }
-
-const USE_LIGHTING = true;
 
 const DYNAMIC_INITIAL_LENGTH = 4096;
 
@@ -152,7 +151,13 @@ class BufferGeometryModelLayer implements ModelLayer {
 
     this.mesh.frustumCulled = false;
 
-    this.mesh.position.z = this.depth;
+    const configObject = Config.getInstance().getConfig();
+
+    if (configObject.rendering.city_mode) {
+      this.mesh.position.z = this.depth;
+    } else {
+      this.mesh.position.z = this.depth / 10000;
+    }
 
     this.buffer = this.mesh.geometry as THREE.BufferGeometry;
 
@@ -405,8 +410,13 @@ class BorderedRectangleModelLayer implements ModelLayer {
       private enableSolidLayer: boolean, private enableLineLayer: boolean,
       private enableWallLayer: boolean, private enableNormals: boolean) {
     if (this.enableSolidLayer) {
-      this.solidLayer = new BufferGeometryModelLayer(
-          this.owner, this.depth, false, 1.0, this.enableNormals);
+      if (this.enableLineLayer) {
+        this.solidLayer = new BufferGeometryModelLayer(
+            this.owner, this.depth, false, 0.0, this.enableNormals);
+      } else {
+        this.solidLayer = new BufferGeometryModelLayer(
+            this.owner, this.depth, false, 1.0, this.enableNormals);
+      }
 
       const solidGroup = this.solidLayer.getRenderGroup();
       solidGroup.position.z = -0.00001;
@@ -572,7 +582,9 @@ export class MultiLayerModel implements RenderGroup {
   private material: THREE.Material;
 
   constructor() {
-    if (USE_LIGHTING) {
+    const configObject = Config.getInstance().getConfig();
+
+    if (configObject.quality.enable_lighting) {
       this.material = new THREE.MeshStandardMaterial({
         color: 0xffffff,
         vertexColors: THREE.VertexColors,
@@ -694,8 +706,12 @@ export class MultiLayerModel implements RenderGroup {
   }
 
   private addLayer(layer: number) {
-    const newLayer =
-        new BorderedRectangleModelLayer(this, layer, true, false, false, false);
+    const configObject = Config.getInstance().getConfig();
+    const newLayer = new BorderedRectangleModelLayer(
+        this, layer, configObject.rendering.render_solid,
+        configObject.rendering.render_borders,
+        configObject.rendering.render_walls,
+        configObject.quality.enable_lighting);
     this.model.add(newLayer.getRenderGroup());
     this.layers.push(newLayer);
   }
