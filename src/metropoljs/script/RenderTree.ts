@@ -2,6 +2,7 @@ import * as estree from 'estree';
 import * as THREE from 'three';
 
 import {Rectangle} from '../common';
+import {RectangleUpdatePointer} from './MultiLayerModel';
 
 /**
  * Represents one node in the binary tree. Contains a bounding box for
@@ -23,7 +24,7 @@ export class RenderTree {
    */
   node: estree.Node|null = null;
 
-  updateIndex: number|null = null;
+  updateIndex: RectangleUpdatePointer|null = null;
 
   overlayColor: THREE.Color|null = null;
 

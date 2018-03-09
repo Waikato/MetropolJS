@@ -116,7 +116,7 @@ export class ScriptGroup implements RenderGroup {
 
         scripts.push(...script.getScripts());
 
-        script.detachFromBus();
+        script.dispose();
       }
     });
 

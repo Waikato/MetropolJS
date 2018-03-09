@@ -1,3 +1,5 @@
+// From THREE.js
+
 import * as THREE from 'three';
 
 enum OrbitControlsState {

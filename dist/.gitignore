@@ -1,0 +1,4 @@
+index.html
+*.js
+*.map
+!config.example.js

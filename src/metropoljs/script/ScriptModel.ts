@@ -146,8 +146,11 @@ export class ScriptModel implements RenderGroup {
     return this.nodeRenderMap.get(node) || null;
   }
 
-  detachFromBus() {
+  dispose() {
     this.eventBus.removeListener('script.stepNotify', this.notifyListener);
+    if (this.model) {
+      this.model.dispose();
+    }
   }
 
   private computeNodeColor(tree: RenderTree): THREE.Color {

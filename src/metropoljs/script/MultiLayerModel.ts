@@ -5,13 +5,25 @@ import * as THREE from 'three';
 
 import {expect, Rectangle, RenderGroup} from '../common';
 
+export interface RectangleUpdatePointer {
+  a: number;
+  b: number;
+  c: number;
+  d: number;
+}
+
 interface ModelLayer extends RenderGroup {
-  emitVertex(location: THREE.Vector3, color?: THREE.Color): number;
-  emitTriangle(a: number, b: number, c: number, color?: THREE.Color): number;
+  emitVertex(
+      location: THREE.Vector3, color?: THREE.Color,
+      normal?: THREE.Vector3): number;
+  emitTriangle(a: number, b: number, c: number, color?: THREE.Color): void;
   emitRectangle(
-      a: number, b: number, c: number, d: number, color?: THREE.Color): number;
-  emitLine(a: number, b: number, color?: THREE.Color): number;
-  updateGeometryColor(index: number, color: THREE.Color): void;
+      a: number, b: number, c: number, d: number, color?: THREE.Color): void;
+  emitLine(a: number, b: number, color?: THREE.Color): void;
+  updateGeometryColor(rectUpdate: RectangleUpdatePointer, color: THREE.Color):
+      void;
+
+  dispose(): void;
 
   getVertexCount(): number;
 
@@ -107,7 +119,7 @@ class BufferGeometryModelLayer implements ModelLayer {
   private colors: Uint8DynamicArray;
   private alpha: Float32DynamicArray;
   private indexes: Uint32DynamicArray;
-  private faces: number[][] = [];
+  private normals: Float32DynamicArray|null = null;
 
   private lastVertex = 0;
 
@@ -122,10 +134,12 @@ class BufferGeometryModelLayer implements ModelLayer {
   private colorAttribute: THREE.Uint8BufferAttribute;
   private alphaAttribute: THREE.Float32BufferAttribute;
   private indexAttribute: THREE.Uint32BufferAttribute;
+  private normalAttribute: THREE.Float32BufferAttribute|null = null;
 
   constructor(
       private owner: MultiLayerModel, private depth: number,
-      private usesLines: boolean, private defaultAlpha: number) {
+      private usesLines: boolean, private defaultAlpha: number,
+      private enableNormals: boolean) {
     if (usesLines) {
       this.mesh = new THREE.LineSegments();
     } else {
@@ -147,7 +161,7 @@ class BufferGeometryModelLayer implements ModelLayer {
     this.positionAttribute =
         new THREE.BufferAttribute(this.positions.getArray() || expect(), 3);
 
-    this.colors = new DynamicArrayBuffer(Uint8Array, 4);
+    this.colors = new DynamicArrayBuffer(Uint8Array, 3);
 
     this.colorAttribute =
         new THREE.BufferAttribute(this.colors.getArray() || expect(), 3);
@@ -170,9 +184,26 @@ class BufferGeometryModelLayer implements ModelLayer {
     this.buffer.addAttribute('color', this.colorAttribute);
     this.buffer.addAttribute('alpha', this.alphaAttribute);
     this.buffer.setIndex(this.indexAttribute);
+
+    if (this.enableNormals) {
+      this.normals = new DynamicArrayBuffer(Float32Array, 3);
+
+      this.normalAttribute =
+          new THREE.BufferAttribute(this.normals.getArray() || expect(), 3);
+      this.normalAttribute.normalized = true;
+
+      this.buffer.addAttribute('normal', this.normalAttribute);
+    }
   }
 
-  emitVertex(location: THREE.Vector3, color?: THREE.Color): number {
+  dispose() {
+    this.buffer.dispose();
+    this.mesh.material.dispose();
+  }
+
+  emitVertex(
+      location: THREE.Vector3, color?: THREE.Color,
+      normal?: THREE.Vector3): number {
     if (color) {
       this.colors.push(color.r * 255, color.g * 255, color.b * 255);
 
@@ -203,10 +234,21 @@ class BufferGeometryModelLayer implements ModelLayer {
 
     this.positionAttribute.needsUpdate = true;
 
+    if (normal && this.enableNormals && this.normals && this.normalAttribute) {
+      this.normals.push(location.x, location.y, location.z);
+
+      const newNormalsArray = this.normals.getArray();
+      if (newNormalsArray) {
+        this.normalAttribute.setArray(newNormalsArray);
+      }
+
+      this.normalAttribute.needsUpdate = true;
+    }
+
     return this.lastVertex++;
   }
 
-  emitTriangle(a: number, b: number, c: number, color?: THREE.Color): number {
+  emitTriangle(a: number, b: number, c: number, color?: THREE.Color) {
     this.indexes.push(a, b, c);
 
     const newArray = this.indexes.getArray();
@@ -215,11 +257,9 @@ class BufferGeometryModelLayer implements ModelLayer {
     }
 
     this.indexAttribute.needsUpdate = true;
-
-    return this.faces.push([a, b, c]) - 1;
   }
 
-  emitLine(a: number, b: number, color?: THREE.Color): number {
+  emitLine(a: number, b: number, color?: THREE.Color) {
     this.indexes.push(a, b);
 
     const newArray = this.indexes.getArray();
@@ -228,37 +268,28 @@ class BufferGeometryModelLayer implements ModelLayer {
     }
 
     this.indexAttribute.needsUpdate = true;
-
-    return this.faces.push([a, b]) - 1;
   }
 
   emitRectangle(
       topLeftVert: number, topRightVert: number, bottomLeftVert: number,
-      bottomRightVert: number, color?: THREE.Color): number {
+      bottomRightVert: number, color?: THREE.Color) {
     if (this.usesLines) {
-      const updateIndex = this.emitLine(topLeftVert, topRightVert, color);
+      this.emitLine(topLeftVert, topRightVert, color);
       this.emitLine(topRightVert, bottomRightVert, color);
       this.emitLine(bottomRightVert, bottomLeftVert, color);
       this.emitLine(bottomLeftVert, topLeftVert, color);
-      return updateIndex;
     } else {
-      const updateIndex =
-          this.emitTriangle(topLeftVert, topRightVert, bottomLeftVert, color);
+      this.emitTriangle(topLeftVert, topRightVert, bottomLeftVert, color);
       this.emitTriangle(topRightVert, bottomRightVert, bottomLeftVert, color);
-      return updateIndex;
     }
   }
 
-  updateGeometryColor(index: number, color: THREE.Color): void {
-    if (this.usesLines) {
-      this.updateFaceColor(index + 0, color);
-      this.updateFaceColor(index + 1, color);
-      this.updateFaceColor(index + 2, color);
-      this.updateFaceColor(index + 3, color);
-    } else {
-      this.updateFaceColor(index + 0, color);
-      this.updateFaceColor(index + 1, color);
-    }
+  updateGeometryColor(rectUpdate: RectangleUpdatePointer, color: THREE.Color) {
+    this.updateVertexColor(rectUpdate.a, color);
+    this.updateVertexColor(rectUpdate.b, color);
+    this.updateVertexColor(rectUpdate.c, color);
+    this.updateVertexColor(rectUpdate.d, color);
+    this.flagUpdate();
   }
 
   setOpacity(opacity: number): void {
@@ -279,12 +310,12 @@ class BufferGeometryModelLayer implements ModelLayer {
     return this.positions.count();
   }
 
-  protected updateFaceColor(index: number, color: THREE.Color): void {
-    this.faces[index].forEach((vertexIndex) => {
-      this.colors.set([color.r, color.g, color.b], vertexIndex * 3);
-      this.alpha.set([1.0], vertexIndex);
-    });
+  protected updateVertexColor(vertexIndex: number, color: THREE.Color): void {
+    this.colors.set([color.r, color.g, color.b], vertexIndex * 3);
+    this.alpha.set([1.0], vertexIndex);
+  }
 
+  protected flagUpdate() {
     this.colorAttribute.needsUpdate = true;
     this.alphaAttribute.needsUpdate = true;
   }
@@ -292,18 +323,22 @@ class BufferGeometryModelLayer implements ModelLayer {
 
 class WallModelLayer extends BufferGeometryModelLayer {
   constructor(owner: MultiLayerModel, depth: number) {
-    super(owner, depth, false, 1.0);
+    super(owner, depth, false, 1.0, true);
   }
 
-  emitVertex(location: THREE.Vector3, color?: THREE.Color): number {
-    const vertexIndex = super.emitVertex(location, color);
-    super.emitVertex(location.clone().setZ(-1), color);
+  emitVertex(
+      location: THREE.Vector3, color?: THREE.Color,
+      normal?: THREE.Vector3): number {
+    const vertexIndex = super.emitVertex(location, color, normal);
+    super.emitVertex(
+        location.clone().setZ(-1), color,
+        normal ? normal.clone().setZ(1) : undefined);
     return vertexIndex;
   }
 
   emitRectangle(
       frontLeftVertex: number, frontRightVertex: number, backLeftVertex: number,
-      backRightVertex: number, color?: THREE.Color): number {
+      backRightVertex: number, color?: THREE.Color) {
     const topFrontLeft = (frontLeftVertex * 2);
     const bottomFrontLeft = topFrontLeft + 1;
 
@@ -317,7 +352,7 @@ class WallModelLayer extends BufferGeometryModelLayer {
     const bottomBackRight = topBackRight + 1;
 
     // front (topFrontLeft, topFrontRight, bottomFrontRight, bottomFrontLeft)
-    const updateIndex = this._emitRectangle(
+    this._emitRectangle(
         topFrontLeft, topFrontRight, bottomFrontRight, bottomFrontLeft, true,
         false, color);
 
@@ -335,24 +370,19 @@ class WallModelLayer extends BufferGeometryModelLayer {
     this._emitRectangle(
         topFrontRight, topBackRight, bottomBackRight, bottomFrontRight, true,
         false, color);
-
-    return updateIndex;
   }
 
-  updateGeometryColor(index: number, color: THREE.Color): void {}
+  updateGeometryColor(rectUpdate: RectangleUpdatePointer, color: THREE.Color):
+      void {}
 
   private _emitRectangle(
       topLeftVert: number, topRightVert: number, bottomLeftVert: number,
       bottomRightVert: number, flipOne: boolean, flipTwo: boolean,
-      color?: THREE.Color): number {
-    let updateIndex = 0;
-
+      color?: THREE.Color) {
     if (flipOne) {
-      updateIndex =
-          super.emitTriangle(bottomLeftVert, topRightVert, topLeftVert, color);
+      super.emitTriangle(bottomLeftVert, topRightVert, topLeftVert, color);
     } else {
-      updateIndex =
-          super.emitTriangle(topLeftVert, topRightVert, bottomLeftVert, color);
+      super.emitTriangle(topLeftVert, topRightVert, bottomLeftVert, color);
     }
 
     if (flipTwo) {
@@ -360,39 +390,74 @@ class WallModelLayer extends BufferGeometryModelLayer {
     } else {
       super.emitTriangle(topLeftVert, bottomRightVert, bottomLeftVert, color);
     }
-
-    return updateIndex;
   }
 }
 
 class BorderedRectangleModelLayer implements ModelLayer {
   private group: THREE.Group = new THREE.Group();
 
-  private solidLayer: ModelLayer;
-  private lineLayer: ModelLayer;
-  private wallLayer: WallModelLayer;
+  private solidLayer: ModelLayer|null = null;
+  private lineLayer: ModelLayer|null = null;
+  private wallLayer: WallModelLayer|null = null;
 
-  constructor(private owner: MultiLayerModel, private depth: number) {
-    this.solidLayer =
-        new BufferGeometryModelLayer(this.owner, this.depth, false, 1.0);
+  constructor(
+      private owner: MultiLayerModel, private depth: number,
+      private enableSolidLayer: boolean, private enableLineLayer: boolean,
+      private enableWallLayer: boolean, private enableNormals: boolean) {
+    if (this.enableSolidLayer) {
+      this.solidLayer = new BufferGeometryModelLayer(
+          this.owner, this.depth, false, 1.0, this.enableNormals);
 
-    const solidGroup = this.solidLayer.getRenderGroup();
-    solidGroup.position.z = -0.00001;
+      const solidGroup = this.solidLayer.getRenderGroup();
+      solidGroup.position.z = -0.00001;
 
-    this.group.add(solidGroup);
+      this.group.add(solidGroup);
+    }
 
-    this.lineLayer =
-        new BufferGeometryModelLayer(this.owner, this.depth, true, 1.0);
-    this.group.add(this.lineLayer.getRenderGroup());
+    if (this.enableLineLayer) {
+      this.lineLayer = new BufferGeometryModelLayer(
+          this.owner, this.depth, true, 1.0, false);
+      this.group.add(this.lineLayer.getRenderGroup());
+    }
 
-    this.wallLayer = new WallModelLayer(this.owner, this.depth);
-    this.group.add(this.wallLayer.getRenderGroup());
+    if (this.enableWallLayer) {
+      this.wallLayer = new WallModelLayer(this.owner, this.depth);
+      this.group.add(this.wallLayer.getRenderGroup());
+    }
   }
 
-  emitVertex(location: THREE.Vector3, color?: THREE.Color): number {
-    this.solidLayer.emitVertex(location, color);
-    this.wallLayer.emitVertex(location, color);
-    return this.lineLayer.emitVertex(location, color);
+  dispose() {
+    if (this.solidLayer) {
+      this.solidLayer.dispose();
+    }
+    if (this.lineLayer) {
+      this.lineLayer.dispose();
+    }
+    if (this.wallLayer) {
+      this.wallLayer.dispose();
+    }
+  }
+
+  emitVertex(
+      location: THREE.Vector3, color?: THREE.Color,
+      normal?: THREE.Vector3): number {
+    let solidIndex = 0;
+
+    if (this.enableSolidLayer && this.solidLayer) {
+      solidIndex = this.solidLayer.emitVertex(location, color, normal);
+    }
+
+    if (this.enableWallLayer && this.wallLayer) {
+      this.wallLayer.emitVertex(location, color, normal);
+    }
+
+    if (this.enableLineLayer && this.lineLayer) {
+      return this.lineLayer.emitVertex(location, color, normal);
+    } else if (this.enableSolidLayer) {
+      return solidIndex;
+    }
+
+    throw new Error('Vertex index not implemented');
   }
 
   emitTriangle(a: number, b: number, c: number, color?: THREE.Color): number {
@@ -400,20 +465,39 @@ class BorderedRectangleModelLayer implements ModelLayer {
   }
 
   emitRectangle(
-      a: number, b: number, c: number, d: number, color?: THREE.Color): number {
-    this.solidLayer.emitRectangle(a, b, c, d, color);
-    this.wallLayer.emitRectangle(a, b, c, d, color);
-    return this.lineLayer.emitRectangle(a, b, c, d, color);
+      a: number, b: number, c: number, d: number, color?: THREE.Color): void {
+    let solidIndex = 0;
+
+    if (this.enableSolidLayer && this.solidLayer) {
+      this.solidLayer.emitRectangle(a, b, c, d, color);
+    }
+
+    if (this.enableWallLayer && this.wallLayer) {
+      this.wallLayer.emitRectangle(a, b, c, d, color);
+    }
+
+    if (this.enableLineLayer && this.lineLayer) {
+      this.lineLayer.emitRectangle(a, b, c, d, color);
+    }
   }
 
   emitLine(a: number, b: number, color?: THREE.Color): number {
     throw new Error('Not Implemented');
   }
 
-  updateGeometryColor(index: number, color: THREE.Color): void {
-    this.lineLayer.updateGeometryColor(index, color);
-    this.wallLayer.updateGeometryColor(index, color);
-    this.solidLayer.updateGeometryColor(index / 2, color);
+  updateGeometryColor(rectUpdate: RectangleUpdatePointer, color: THREE.Color):
+      void {
+    if (this.enableLineLayer && this.lineLayer) {
+      this.lineLayer.updateGeometryColor(rectUpdate, color);
+    }
+
+    if (this.enableWallLayer && this.wallLayer) {
+      this.wallLayer.updateGeometryColor(rectUpdate, color);
+    }
+
+    if (this.enableSolidLayer && this.solidLayer) {
+      this.solidLayer.updateGeometryColor(rectUpdate, color);
+    }
   }
 
   getRenderGroup(): THREE.Group {
@@ -421,20 +505,49 @@ class BorderedRectangleModelLayer implements ModelLayer {
   }
 
   setOpacity(opacity: number): void {
-    this.lineLayer.setOpacity(opacity);
-    this.wallLayer.setOpacity(opacity);
-    this.solidLayer.setOpacity(opacity);
+    if (this.enableLineLayer && this.lineLayer) {
+      this.lineLayer.setOpacity(opacity);
+    }
+
+    if (this.enableWallLayer && this.wallLayer) {
+      this.wallLayer.setOpacity(opacity);
+    }
+
+    if (this.enableSolidLayer && this.solidLayer) {
+      this.solidLayer.setOpacity(opacity);
+    }
   }
 
   setVisible(visible: boolean): void {
-    this.lineLayer.setVisible(visible);
-    this.wallLayer.setVisible(visible);
-    this.solidLayer.setVisible(visible);
+    if (this.enableLineLayer && this.lineLayer) {
+      this.lineLayer.setVisible(visible);
+    }
+
+    if (this.enableWallLayer && this.wallLayer) {
+      this.wallLayer.setVisible(visible);
+    }
+
+    if (this.enableSolidLayer && this.solidLayer) {
+      this.solidLayer.setVisible(visible);
+    }
   }
 
   getVertexCount(): number {
-    return this.lineLayer.getVertexCount() + this.wallLayer.getVertexCount() +
-        this.solidLayer.getVertexCount();
+    let vertexCount = 0;
+
+    if (this.enableLineLayer && this.lineLayer) {
+      vertexCount += this.lineLayer.getVertexCount();
+    }
+
+    if (this.enableWallLayer && this.wallLayer) {
+      vertexCount += this.wallLayer.getVertexCount();
+    }
+
+    if (this.enableSolidLayer && this.solidLayer) {
+      vertexCount += this.solidLayer.getVertexCount();
+    }
+
+    return vertexCount;
   }
 }
 
@@ -460,7 +573,7 @@ export class MultiLayerModel implements RenderGroup {
 
   constructor() {
     if (USE_LIGHTING) {
-      this.material = new THREE.MeshBasicMaterial({
+      this.material = new THREE.MeshStandardMaterial({
         color: 0xffffff,
         vertexColors: THREE.VertexColors,
       });
@@ -478,6 +591,13 @@ export class MultiLayerModel implements RenderGroup {
     this.model = new THREE.Group();
   }
 
+  dispose() {
+    this.layers.forEach((layer) => {
+      layer.dispose();
+    });
+    this.material.dispose();
+  }
+
   getMaterial(): THREE.Material {
     return this.material;
   }
@@ -486,30 +606,39 @@ export class MultiLayerModel implements RenderGroup {
    * Draw a rectangle at a given layer on the model.
    */
   drawRectangle(layer: number, rectangle: Rectangle, color: THREE.Color):
-      number {
+      RectangleUpdatePointer {
     const modelLayer = this.getLayer(layer);
 
     const topLeftVert = modelLayer.emitVertex(
-        new THREE.Vector3(rectangle.x, rectangle.y, 0), color);
+        new THREE.Vector3(rectangle.x, rectangle.y, 0), color,
+        new THREE.Vector3(-1, -1, -1));
     const topRightVert = modelLayer.emitVertex(
-        new THREE.Vector3(rectangle.x + rectangle.w, rectangle.y, 0), color);
+        new THREE.Vector3(rectangle.x + rectangle.w, rectangle.y, 0), color,
+        new THREE.Vector3(1, -1, -1));
     const bottomLeftVert = modelLayer.emitVertex(
-        new THREE.Vector3(rectangle.x, rectangle.y + rectangle.h, 0), color);
+        new THREE.Vector3(rectangle.x, rectangle.y + rectangle.h, 0), color,
+        new THREE.Vector3(-1, 1, -1));
     const bottomRightVert = modelLayer.emitVertex(
         new THREE.Vector3(
             rectangle.x + rectangle.w, rectangle.y + rectangle.h, 0),
-        color);
+        color, new THREE.Vector3(1, 1, -1));
 
     const updateIndex = modelLayer.emitRectangle(
         topLeftVert, topRightVert, bottomLeftVert, bottomRightVert, color);
 
-    return updateIndex;
+    return {
+      a: topLeftVert,
+      b: topRightVert,
+      c: bottomLeftVert,
+      d: bottomRightVert
+    };
   }
 
-  updateColor(layer: number, index: number, color: THREE.Color) {
+  updateColor(
+      layer: number, rectUpdate: RectangleUpdatePointer, color: THREE.Color) {
     const modelLayer = this.getLayer(layer);
 
-    modelLayer.updateGeometryColor(index, color);
+    modelLayer.updateGeometryColor(rectUpdate, color);
   }
 
   /**
@@ -565,7 +694,8 @@ export class MultiLayerModel implements RenderGroup {
   }
 
   private addLayer(layer: number) {
-    const newLayer = new BorderedRectangleModelLayer(this, layer);
+    const newLayer =
+        new BorderedRectangleModelLayer(this, layer, true, false, false, false);
     this.model.add(newLayer.getRenderGroup());
     this.layers.push(newLayer);
   }

@@ -3,8 +3,12 @@ import * as THREE from 'three';
 import {EventBus} from './EventBus';
 import {MetropolJSCameraControls} from './MetropolJSCameraControls';
 import {MetropolJSSession} from './MetropolJSSession';
+import {EffectComposer} from './third_party/EffectComposer';
+import {RenderPass} from './third_party/RenderPass';
+import {SSAOPass} from './third_party/SSAOPass';
 
 const USE_LIGHTING = true;
+const USE_SSAO = false;
 
 /**
  * Base element for MetropolJS. Owns the user interface and renderer. Contains a
@@ -21,6 +25,8 @@ export class MetropolJSElement {
 
   private ownerElement: HTMLDivElement|null = null;
 
+  private effectComposer: EffectComposer|null = null;
+
   constructor(private ownerDocument: Document) {
     this.eventBus = new EventBus();
 
@@ -33,43 +39,23 @@ export class MetropolJSElement {
     this.scene.add(this.session.getRenderGroup());
 
     if (USE_LIGHTING) {
-      // LIGHTS
+      const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+      this.scene.add(ambientLight);
+    }
 
-      const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.6);
-      hemiLight.color.setHSL(0.6, 1, 0.6);
-      hemiLight.groundColor.setHSL(0.095, 1, 0.75);
-      hemiLight.position.set(0, 50, 0);
-      this.scene.add(hemiLight);
+    if (USE_SSAO) {
+      const renderPass = new RenderPass(this.scene, this.controls.getCamera());
 
-      const hemiLightHelper = new THREE.HemisphereLightHelper(hemiLight, 10);
-      this.scene.add(hemiLightHelper);
+      const ssaoPass = new SSAOPass(this.scene, this.controls.getCamera());
+      ssaoPass.renderToScreen = true;
 
-      //
+      ssaoPass.radius = 32;
+      ssaoPass.aoClamp = 0.25;
+      ssaoPass.lumInfluence = 0.7;
 
-      const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-      dirLight.color.setHSL(0.1, 1, 0.95);
-      dirLight.position.set(-1, 1.75, 1);
-      dirLight.position.multiplyScalar(30);
-      this.scene.add(dirLight);
-
-      dirLight.castShadow = true;
-
-      dirLight.shadow.mapSize.width = 2048;
-      dirLight.shadow.mapSize.height = 2048;
-
-      var d = 50;
-
-      dirLight.shadow.camera.left = -d;
-      dirLight.shadow.camera.right = d;
-      dirLight.shadow.camera.top = d;
-      dirLight.shadow.camera.bottom = -d;
-
-      dirLight.shadow.camera.far = 3500;
-      dirLight.shadow.bias = -0.0001;
-
-      const dirLightHeper =
-          new THREE.DirectionalLightHelper(
-                       dirLight, 10) this.scene.add(dirLightHeper);
+      this.effectComposer = new EffectComposer(this.renderer);
+      this.effectComposer.addPass(renderPass);
+      this.effectComposer.addPass(ssaoPass);
     }
 
     this.renderer.setClearColor(new THREE.Color(0xffffff));
@@ -101,12 +87,21 @@ export class MetropolJSElement {
     this.renderer.setSize(
         this.ownerElement.clientWidth, this.ownerElement.clientHeight);
 
+    if (this.effectComposer && USE_SSAO) {
+      this.effectComposer.setSize(
+          this.ownerElement.clientWidth, this.ownerElement.clientHeight);
+    }
+
     this.controls.resize(
         this.ownerElement.clientWidth, this.ownerElement.clientHeight);
   }
 
   private update() {
-    this.renderer.render(this.scene, this.controls.getCamera());
+    if (this.effectComposer && USE_SSAO) {
+      this.effectComposer.render();
+    } else {
+      this.renderer.render(this.scene, this.controls.getCamera());
+    }
 
     window.requestAnimationFrame(this.update.bind(this));
   }

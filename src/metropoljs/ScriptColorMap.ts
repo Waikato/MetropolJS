@@ -18,7 +18,7 @@ export class ScriptColorMap {
   /**
    * The color scheme to use for rendering.
    */
-  private currentColors: RendererColors = RendererColors.Grey;
+  private currentColors: RendererColors = RendererColors.XRay;
 
   /**
    * Get the current color scheme being used.

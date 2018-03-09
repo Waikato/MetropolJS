@@ -1,11 +1,14 @@
 import * as THREE from 'three';
 
 export enum LayoutDimension {
-  Level1 = 1,  // 32
-  Level2 = 2,  // 64
-  Level3 = 4,  // 128
-  Level4 = 8,  // 256
-  Level5 = 16  // 512
+  Level1 = 1,    // 32
+  Level2 = 2,    // 64
+  Level3 = 4,    // 128
+  Level4 = 8,    // 256
+  Level5 = 16,   // 512
+  Level6 = 32,   // 1024
+  Level7 = 64,   // 2048
+  Level8 = 128,  // 4096
 }
 
 const BASE_NODE_SIZE = 16;
@@ -68,8 +71,14 @@ export class ScriptLayout {
       return LayoutDimension.Level3;
     } else if (nodeCount < 65536) {
       return LayoutDimension.Level4;
-    } else {
+    } else if (nodeCount < 262144) {
       return LayoutDimension.Level5;
+    } else if (nodeCount < 1048576) {
+      return LayoutDimension.Level6;
+    } else if (nodeCount < 4194304) {
+      return LayoutDimension.Level7;
+    } else {
+      return LayoutDimension.Level8;
     }
   }
 
@@ -84,8 +93,14 @@ export class ScriptLayout {
       return 128;
     } else if (level === LayoutDimension.Level5) {
       return 256;
-    } else {
+    } else if (level === LayoutDimension.Level6) {
       return 512;
+    } else if (level === LayoutDimension.Level7) {
+      return 1024;
+    } else if (level === LayoutDimension.Level8) {
+      return 2048;
+    } else {
+      return 4096;
     }
   }
 
