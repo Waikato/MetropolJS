@@ -1,3 +1,4 @@
+import 'stats.js';
 import * as THREE from 'three';
 
 import {Config} from './Config';
@@ -24,6 +25,8 @@ export class MetropolJSElement {
   private ownerElement: HTMLDivElement|null = null;
 
   private effectComposer: EffectComposer|null = null;
+
+  private stats: Stats;
 
   constructor(private ownerDocument: Document) {
     const configObject = Config.getInstance().getConfig();
@@ -59,6 +62,8 @@ export class MetropolJSElement {
     }
 
     this.renderer.setClearColor(new THREE.Color(0xffffff));
+
+    this.stats = new (require('stats.js'))();
   }
 
   attachTo(target: HTMLDivElement) {
@@ -73,6 +78,8 @@ export class MetropolJSElement {
     this.update();
 
     // Bind to controls
+    this.stats.showPanel(0);
+    target.appendChild(this.stats.dom);
   }
 
   async connect(connectionString: string) {
@@ -97,11 +104,15 @@ export class MetropolJSElement {
   }
 
   private update() {
+    this.stats.begin();
+
     if (this.effectComposer) {
       this.effectComposer.render();
     } else {
       this.renderer.render(this.scene, this.controls.getCamera());
     }
+
+    this.stats.end();
 
     window.requestAnimationFrame(this.update.bind(this));
   }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {Color, Material} from 'three';
 
 import {Pass} from './Pass';
 
@@ -11,7 +12,7 @@ export class RenderPass extends Pass {
 
   constructor(
       public scene: THREE.Scene, public camera: THREE.Camera,
-      public overrideMaterial?: THREE.Material, public clearColor?: THREE.Color,
+      public overrideMaterial?: Material, public clearColor?: Color,
       public clearAlpha?: number) {
     super();
 

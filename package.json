@@ -18,9 +18,10 @@
     "license": "Apache-2.0",
     "devDependencies": {
         "@types/acorn": "^4.0.3",
-        "@types/estree": "^0.0.38",
         "@types/esprima": "^4.0.1",
+        "@types/estree": "^0.0.38",
         "@types/node": "^9.4.6",
+        "@types/stats.js": "^0.17.0",
         "@types/three": "^0.89.10",
         "@types/ws": "^4.0.1",
         "gts": "^0.5.3",
@@ -29,10 +30,11 @@
     },
     "dependencies": {
         "acorn": "^5.2.1",
-        "esprima": "^4.0.0",
         "chrome-remote-debug-protocol": "^1.2.20170721",
+        "esprima": "^4.0.0",
         "isomorphic-ws": "^4.0.0",
         "noice-json-rpc": "^1.1.1",
+        "stats.js": "^0.17.0",
         "three": "^0.90.0",
         "ws": "^4.1.0"
     }
