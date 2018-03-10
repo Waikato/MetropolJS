@@ -47,9 +47,11 @@ export function getNodeChildren(node: estree.Node): estree.Node[] {
 
     if (typeof (value) === 'object') {
       if (value instanceof Array) {
-        ret.push(...value);
+        ret.push(...value.filter((val) => {
+          return val && val.type && typeof (val.type) === 'string';
+        }));
       } else {
-        if (value && value.type) {
+        if (value && value.type && typeof (value.type) === 'string') {
           ret.push(value);
         }
       }

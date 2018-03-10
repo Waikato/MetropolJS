@@ -2,6 +2,7 @@ import * as estree from 'estree';
 import * as THREE from 'three';
 
 import {countNodeChildren, DebugSource, expect, RenderGroup} from '../common';
+import {Config} from '../Config';
 import {ScriptLoadedEvent, ScriptStepNotifyEvent} from '../debugger/AbstractDebugger';
 import {EventBus} from '../EventBus';
 import {ScriptColorMap} from '../ScriptColorMap';
@@ -24,6 +25,10 @@ export class ScriptGroup implements RenderGroup, DebugSource {
     setInterval(() => {
       this.mergeScripts();
     }, 5000);
+
+    if (Config.getInstance().getConfig().rendering['3d_mode']) {
+      this.group.rotation.x = -(Math.PI / 2);
+    }
   }
 
   connectBus() {
