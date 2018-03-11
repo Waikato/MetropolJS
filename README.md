@@ -1,6 +1,7 @@
 # MetropolJS
 
 **Paper PDF**: `TODO: Put an Open Access link to the paper`
+**Live Demo**: https://waikato.github.io/MetropolJS/
 
 ## Introduction
 
@@ -43,17 +44,25 @@ The example config file in [dist/config.example.js](dist/config.example.js) is r
 loadMetropolJSConfig({
     // Debugger options
     'debugger': {
-        // The type of debugger to connect to ('v8').
+        // The type of debugger to connect to ('v8'|'interpreter').
         'type': 'v8',
 
         // The connection string to use for the debugger (string).
         // For V8 this will be a websocket URL.
+        // For interpreter it will be the script to load
+        // - jquery
+        // - lodash
+        // - moment
+        // - richards
+        // - underscore
+        // - underscore_test
         'connect': 'ws://localhost:9229/',
     },
 
     // Rendering options
     'rendering': {
-        // Should the camera be set for top down pan and zoom or full orbit // controls (true|false).
+        // Should the camera be set for top down pan and zoom or full orbit //
+        // controls (true|false).
         '3d_mode': false,
 
         // Should the layers be extruded so that walls can be added? (true|false).
