@@ -1,5 +1,6 @@
 import {DebugSource, RenderGroup} from './common';
 import {AbstractDebugger} from './debugger/AbstractDebugger';
+import {InterpreterDebugger} from './debugger/InterpreterDebugger';
 import {V8Debugger} from './debugger/V8Debugger';
 import {EventBus} from './EventBus';
 import {ScriptGroup} from './script/ScriptGroup';
@@ -20,20 +21,28 @@ export class MetropolJSSession implements RenderGroup, DebugSource {
     return this.scriptGroup.getRenderGroup();
   }
 
-  async connectDebugger(target: string) {
-    if (target.startsWith('v8://')) {
+  async connectDebugger(type: 'v8'|'interpreter', target: string) {
+    this.scriptGroup.connectBus();
+
+    if (type === 'v8') {
       const newDebugger = new V8Debugger(this.eventBus);
 
       this.debuggerInstance = newDebugger;
 
-      await newDebugger.connect(target.slice(5));
+      await newDebugger.connect(target);
 
       // Just leave running
       newDebugger.start();
+    } else if (type === 'interpreter') {
+      const newDebugger = new InterpreterDebugger(this.eventBus);
 
-      this.scriptGroup.connectBus();
+      this.debuggerInstance = newDebugger;
+
+      await newDebugger.connect(target);
+
+      newDebugger.start();
     } else {
-      throw new Error('Debugger connection string not recognized');
+      throw new Error('Debugger connection type not recognized');
     }
   }
 

@@ -1,5 +1,8 @@
 // tslint:disable:no-any
 
+require('babel-core/register');
+require('babel-polyfill');
+
 import {Config} from './metropoljs/Config';
 import {MetropolJSElement} from './metropoljs/MetropolJSElement';
 
@@ -16,12 +19,19 @@ function onLoadedConfig() {
 
   metropolJS.attachTo(mainElement);
 
-  if (Config.getInstance().getConfig().debugger.type === 'v8') {
-    metropolJS.connect(
-        'v8://' + Config.getInstance().getConfig().debugger.connect);
+  const configObject = Config.getInstance().getConfig();
+
+  if (configObject.debugger.type === 'v8') {
+    metropolJS.connect('v8', configObject.debugger.connect);
+  } else if (configObject.debugger.type === 'interpreter') {
+    metropolJS.connect('interpreter', configObject.debugger.connect);
   } else {
     throw new Error('Debugger type not found');
   }
+}
+
+function loadDefaultConfig() {
+  onLoadedConfig();
 }
 
 (window as any).loadMetropolJSConfig = function(obj: any) {
@@ -38,7 +48,13 @@ function onLoadedConfig() {
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Loading Config');
-  fetch('/dist/config.js').then((resp) => resp.text()).then((config) => {
-    eval(config);
-  });
+  fetch('/dist/config.js')
+      .then((resp) => resp.text())
+      .then((config) => {
+        eval(config);
+      })
+      .catch((err) => {
+        console.error(err, 'loading default config');
+        loadDefaultConfig();
+      });
 });

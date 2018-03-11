@@ -84,8 +84,8 @@ export class MetropolJSElement implements DebugSource {
     target.appendChild(this.stats.dom);
   }
 
-  async connect(connectionString: string) {
-    await this.session.connectDebugger(connectionString);
+  async connect(dbgType: 'v8'|'interpreter', dbgTarget: string) {
+    await this.session.connectDebugger(dbgType, dbgTarget);
   }
 
   debug() {

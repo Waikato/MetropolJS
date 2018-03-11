@@ -136,16 +136,27 @@ export class ScriptGroup implements RenderGroup, DebugSource {
   }
 
   private mergeScripts() {
-    const scripts: RenderScript[] = [];
+    const scriptObjects: ScriptModel[] = [];
 
     this.loadedScripts.forEach((script, scriptId) => {
       if (script.isLoaded() && script.isSingle()) {
-        this.group.remove(script.getRenderGroup());
-
-        scripts.push(...script.getScripts());
-
-        script.dispose();
+        scriptObjects.push(script);
       }
+    });
+
+    // Stop repeatedly merging scripts.
+    if (scriptObjects.length === 1) {
+      return;
+    }
+
+    const scripts: RenderScript[] = [];
+
+    scriptObjects.forEach((script) => {
+      this.group.remove(script.getRenderGroup());
+
+      scripts.push(...script.getScripts());
+
+      script.dispose();
     });
 
     scripts.forEach((script) => {

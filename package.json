@@ -4,6 +4,7 @@
     "description": "MetropolJS: Visualizing and Debugging Large-Scale JavaScript Program Structure with Treemaps",
     "scripts": {
         "start:dev": "parcel --no-hmr -p 8080 --https src/index.html",
+        "publish:web": "parcel build -d docs src/index.html",
         "test": "echo \"Error: no test specified\" && exit 1",
         "start:node_test": "node --inspect --inspect-port=9230 example.js",
         "check": "gts check",
@@ -29,13 +30,15 @@
         "typescript": "~2.6.1"
     },
     "dependencies": {
-        "acorn": "^5.2.1",
+        "acorn": "^5.5.3",
         "chrome-remote-debug-protocol": "^1.2.20170721",
         "esprima": "^4.0.0",
         "isomorphic-ws": "^4.0.0",
         "noice-json-rpc": "^1.1.1",
         "stats.js": "^0.17.0",
         "three": "^0.90.0",
-        "ws": "^4.1.0"
+        "ws": "^4.1.0",
+        "babel-preset-env": "^1.6.1",
+        "babel-polyfill": "^6.26.0"
     }
 }

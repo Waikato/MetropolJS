@@ -4,11 +4,18 @@
 loadMetropolJSConfig({
     // Debugger options
     'debugger': {
-        // The type of debugger to connect to ('v8').
+        // The type of debugger to connect to ('v8'|'interpreter').
         'type': 'v8',
 
         // The connection string to use for the debugger (string).
         // For V8 this will be a websocket URL.
+        // For interpreter it will be the script to load
+        // - jquery
+        // - lodash
+        // - moment
+        // - richards
+        // - underscore
+        // - underscore_test
         'connect': 'ws://localhost:9229/',
     },
 

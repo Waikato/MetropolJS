@@ -2,10 +2,17 @@ export interface ConfigObject {
   // Debugger options
   debugger: {
     // The type of debugger to connect to ('v8').
-    'type': 'v8';
+    'type': 'v8'|'interpreter';
 
     // The connection string to use for the debugger (string).
     // For V8 this will be a websocket URL.
+    // For interpreter it will be the script to load
+    // - jquery
+    // - lodash
+    // - moment
+    // - richards
+    // - underscore
+    // - underscore_test
     'connect': string;
   };
 
@@ -43,8 +50,8 @@ export interface ConfigObject {
 export class Config {
   private obj: ConfigObject = {
     'debugger': {
-      'type': 'v8',
-      'connect': 'ws://localhost:9229/',
+      'type': 'interpreter',
+      'connect': 'underscore_test',
     },
     'rendering': {
       '3d_mode': false,
