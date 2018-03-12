@@ -30,6 +30,14 @@ export class MetropolJSCameraControls implements DebugSource {
 
     if (!configObject.rendering['3d_mode']) {
       this.orbitControls.enableRotate = false;
+
+      this.orbitControls.mouseButtons = {
+        ORBIT: THREE.MOUSE.RIGHT,
+        ZOOM: THREE.MOUSE.MIDDLE,
+        PAN: THREE.MOUSE.LEFT
+      };
+
+      this.orbitControls.touchControls = {ORBIT: 3, ZOOM: 2, PAN: 1};
     }
   }
 

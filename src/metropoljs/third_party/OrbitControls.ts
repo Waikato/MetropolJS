@@ -89,6 +89,9 @@ export class OrbitControls extends THREE.EventDispatcher {
     PAN: THREE.MOUSE.RIGHT
   };
 
+  // Touch controls
+  touchControls: {[s: string]: number} = {ORBIT: 1, ZOOM: 2, PAN: 3};
+
   // for reset
   target0: THREE.Vector3 = this.target.clone();
   position0: THREE.Vector3 = this.object.position.clone();
@@ -744,7 +747,7 @@ export class OrbitControls extends THREE.EventDispatcher {
     if (this.enabled === false) return;
 
     switch (event.touches.length) {
-      case 1:  // one-fingered touch: rotate
+      case this.touchControls.ORBIT:
 
         if (this.enableRotate === false) return;
 
@@ -754,7 +757,7 @@ export class OrbitControls extends THREE.EventDispatcher {
 
         break;
 
-      case 2:  // two-fingered touch: dolly
+      case this.touchControls.ZOOM:
 
         if (this.enableZoom === false) return;
 
@@ -764,7 +767,7 @@ export class OrbitControls extends THREE.EventDispatcher {
 
         break;
 
-      case 3:  // three-fingered touch: pan
+      case this.touchControls.PAN:
 
         if (this.enablePan === false) return;
 
@@ -791,7 +794,7 @@ export class OrbitControls extends THREE.EventDispatcher {
     event.stopPropagation();
 
     switch (event.touches.length) {
-      case 1:  // one-fingered touch: rotate
+      case this.touchControls.ORBIT:
 
         if (this.enableRotate === false) return;
         if (this.state !== OrbitControlsState.TOUCH_ROTATE)
@@ -801,7 +804,7 @@ export class OrbitControls extends THREE.EventDispatcher {
 
         break;
 
-      case 2:  // two-fingered touch: dolly
+      case this.touchControls.ZOOM:
 
         if (this.enableZoom === false) return;
         if (this.state !== OrbitControlsState.TOUCH_DOLLY)
@@ -811,7 +814,7 @@ export class OrbitControls extends THREE.EventDispatcher {
 
         break;
 
-      case 3:  // three-fingered touch: pan
+      case this.touchControls.PAN:
 
         if (this.enablePan === false) return;
         if (this.state !== OrbitControlsState.TOUCH_PAN)
