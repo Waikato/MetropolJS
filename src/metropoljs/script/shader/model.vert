@@ -1,14 +1,15 @@
-attribute float alpha;
+attribute float colorAmount;
+attribute float visitAmount;
 
-varying float vAlpha;
-varying vec3 vColor;
+varying float vColorAmount;
+varying float vVisitAmount;
 
 // From:
 // https://github.com/mrdoob/three.js/blob/master/examples/webgl_custom_attributes.html
 
 void main() {
-  vAlpha = alpha;
-  vColor = color;
+  vColorAmount = colorAmount;
+  vVisitAmount = visitAmount;
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }

@@ -26,8 +26,6 @@ export class RenderTree {
 
   updateIndex: RectangleUpdatePointer|null = null;
 
-  overlayColor: THREE.Color|null = null;
-
   count: number = 0;
 
   constructor(
@@ -77,13 +75,5 @@ export class RenderTree {
 
   getNode(): estree.Node|null {
     return this.node;
-  }
-
-  getOverlayColor(): THREE.Color|null {
-    return this.overlayColor;
-  }
-
-  setOverlayColor(newColor: THREE.Color): void {
-    this.overlayColor = newColor;
   }
 }

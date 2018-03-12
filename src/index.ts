@@ -49,7 +49,14 @@ function loadDefaultConfig() {
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Loading Config');
   fetch('/dist/config.js')
-      .then((resp) => resp.text())
+      .then((resp) => {
+        if (resp.status === 404) {
+        console.error('loading default config');
+        loadDefaultConfig();
+        return "";
+        }
+        return resp.text()
+      })
       .then((config) => {
         eval(config);
       })

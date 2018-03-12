@@ -45,6 +45,8 @@ export class ScriptModel implements RenderGroup {
 
   private notifyListener: (ev: ScriptStepNotifyEvent) => void = () => {};
 
+  private maxAmount = 0;
+
   constructor(private eventBus: EventBus, private colorMap: ScriptColorMap) {
     this.connectBus();
   }
@@ -137,9 +139,7 @@ export class ScriptModel implements RenderGroup {
       return;
     }
 
-    const computedColor = this.computeNodeColor(pNode);
-
-    this.model.updateColor(pNode.depth, pNode.updateIndex, computedColor);
+    this.model.updateVisitAmount(pNode.depth, pNode.updateIndex, node.count, this.maxAmount);
   }
 
   getTreeFromNode(node: estree.Node): RenderTree|null {
@@ -172,19 +172,6 @@ export class ScriptModel implements RenderGroup {
       console.groupEnd();
     });
     console.groupEnd();
-  }
-
-  private computeNodeColor(tree: RenderTree): THREE.Color {
-    const colorA = this.colorMap.getColorFromType(tree.type, tree.depth);
-    const colorB = tree.getOverlayColor();
-
-    if (!colorB) {
-      return colorA;
-    }
-
-    const computedColor = colorA.clone().add(colorB);
-
-    return computedColor;
   }
 
   /**
@@ -299,7 +286,7 @@ export class ScriptModel implements RenderGroup {
           tree.depth, tree.location,
           this.colorMap.getColorFromType(tree.type, tree.depth));
 
-      if (tree.overlayColor) {
+      if (tree.count > 0) {
         this.updateNode(tree);
       }
 
@@ -364,8 +351,8 @@ export class ScriptModel implements RenderGroup {
   private onStepNotify(ev: ScriptStepNotifyEvent) {
     const node = this.getTreeFromNode(ev.node);
     if (node) {
-      node.setOverlayColor(new THREE.Color(255, 0, 0));
       node.count += ev.count;
+      this.maxAmount = Math.max(node.count, this.maxAmount);
       this.updateNode(node);
     }
   }

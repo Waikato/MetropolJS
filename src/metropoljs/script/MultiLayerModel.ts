@@ -15,13 +15,13 @@ export interface RectangleUpdatePointer {
 
 interface ModelLayer extends RenderGroup {
   emitVertex(
-      location: THREE.Vector3, color?: THREE.Color,
+      location: THREE.Vector3, color: number,
       normal?: THREE.Vector3): number;
-  emitTriangle(a: number, b: number, c: number, color?: THREE.Color): void;
+  emitTriangle(a: number, b: number, c: number): void;
   emitRectangle(
-      a: number, b: number, c: number, d: number, color?: THREE.Color): void;
-  emitLine(a: number, b: number, color?: THREE.Color): void;
-  updateGeometryColor(rectUpdate: RectangleUpdatePointer, color: THREE.Color):
+      a: number, b: number, c: number, d: number): void;
+  emitLine(a: number, b: number): void;
+  updateGeometryVisitAmount(rectUpdate: RectangleUpdatePointer, visitAmount: number, maxAmount: number):
       void;
 
   dispose(): void;
@@ -115,8 +115,8 @@ class BufferGeometryModelLayer implements ModelLayer {
   private buffer: THREE.BufferGeometry;
 
   private positions: Float32DynamicArray;
-  private colors: Uint8DynamicArray;
-  private alpha: Float32DynamicArray;
+  private colorAmount: Float32DynamicArray;
+  private visitAmount: Float32DynamicArray;
   private indexes: Uint32DynamicArray;
   private normals: Float32DynamicArray|null = null;
 
@@ -130,8 +130,8 @@ class BufferGeometryModelLayer implements ModelLayer {
   private group: THREE.Group = new THREE.Group();
 
   private positionAttribute: THREE.Float32BufferAttribute;
-  private colorAttribute: THREE.Uint8BufferAttribute;
-  private alphaAttribute: THREE.Float32BufferAttribute;
+  private colorAmountAttribute: THREE.Float32BufferAttribute;
+  private visitAmountAttribute: THREE.Float32BufferAttribute;
   private indexAttribute: THREE.Uint32BufferAttribute;
   private normalAttribute: THREE.Float32BufferAttribute|null = null;
 
@@ -166,19 +166,18 @@ class BufferGeometryModelLayer implements ModelLayer {
     this.positionAttribute =
         new THREE.BufferAttribute(this.positions.getArray() || expect(), 3);
 
-    this.colors = new DynamicArrayBuffer(Uint8Array, 3);
+    this.colorAmount = new DynamicArrayBuffer(Float32Array, 1);
 
-    this.colorAttribute =
-        new THREE.BufferAttribute(this.colors.getArray() || expect(), 3);
-    this.colorAttribute.normalized = true;
-    this.colorAttribute.setDynamic(true);
+    this.colorAmountAttribute =
+        new THREE.BufferAttribute(this.colorAmount.getArray() || expect(), 1);
+    this.colorAmountAttribute.setDynamic(true);
 
-    this.alpha = new DynamicArrayBuffer(Float32Array, 1);
+    this.visitAmount = new DynamicArrayBuffer(Float32Array, 1);
 
-    this.alphaAttribute =
-        new THREE.BufferAttribute(this.alpha.getArray() || expect(), 1);
-    this.alphaAttribute.normalized = true;
-    this.alphaAttribute.setDynamic(true);
+    this.visitAmountAttribute =
+        new THREE.BufferAttribute(this.visitAmount.getArray() || expect(), 1);
+    this.visitAmountAttribute.normalized = true;
+    this.visitAmountAttribute.setDynamic(true);
 
     this.indexes = new DynamicArrayBuffer(Uint32Array, 1);
 
@@ -186,8 +185,8 @@ class BufferGeometryModelLayer implements ModelLayer {
         new THREE.BufferAttribute(this.indexes.getArray() || expect(), 1);
 
     this.buffer.addAttribute('position', this.positionAttribute);
-    this.buffer.addAttribute('color', this.colorAttribute);
-    this.buffer.addAttribute('alpha', this.alphaAttribute);
+    this.buffer.addAttribute('colorAmount', this.colorAmountAttribute);
+    this.buffer.addAttribute('visitAmount', this.visitAmountAttribute);
     this.buffer.setIndex(this.indexAttribute);
 
     if (this.enableNormals) {
@@ -207,27 +206,23 @@ class BufferGeometryModelLayer implements ModelLayer {
   }
 
   emitVertex(
-      location: THREE.Vector3, color?: THREE.Color,
+      location: THREE.Vector3, color: number,
       normal?: THREE.Vector3): number {
-    if (color) {
-      this.colors.push(color.r * 255, color.g * 255, color.b * 255);
+      this.colorAmount.push(color);
 
-      const newColorArray = this.colors.getArray();
+      const newColorArray = this.colorAmount.getArray();
       if (newColorArray) {
-        this.colorAttribute.setArray(newColorArray);
+        this.colorAmountAttribute.setArray(newColorArray);
       }
 
-      this.colorAttribute.needsUpdate = true;
-    } else {
-      this.colors.push(255, 255, 255);
-    }
+      this.colorAmountAttribute.needsUpdate = true;
 
-    this.alpha.push(this.defaultAlpha);
-    this.alphaAttribute.needsUpdate = true;
+    this.visitAmount.push(0);
+    this.visitAmountAttribute.needsUpdate = true;
 
-    const newAlphaArray = this.alpha.getArray();
+    const newAlphaArray = this.visitAmount.getArray();
     if (newAlphaArray) {
-      this.alphaAttribute.setArray(newAlphaArray);
+      this.visitAmountAttribute.setArray(newAlphaArray);
     }
 
     this.positions.push(location.x, location.y, location.z);
@@ -289,11 +284,16 @@ class BufferGeometryModelLayer implements ModelLayer {
     }
   }
 
-  updateGeometryColor(rectUpdate: RectangleUpdatePointer, color: THREE.Color) {
-    this.updateVertexColor(rectUpdate.a, color);
-    this.updateVertexColor(rectUpdate.b, color);
-    this.updateVertexColor(rectUpdate.c, color);
-    this.updateVertexColor(rectUpdate.d, color);
+  updateGeometryVisitAmount(rectUpdate: RectangleUpdatePointer, visitAmount: number, maxAmount: number) {
+    this.updateVertexVisitAmount(rectUpdate.a, visitAmount);
+    this.updateVertexVisitAmount(rectUpdate.b, visitAmount);
+    this.updateVertexVisitAmount(rectUpdate.c, visitAmount);
+    this.updateVertexVisitAmount(rectUpdate.d, visitAmount);
+
+    if (this.mesh.material instanceof THREE.ShaderMaterial) {
+      this.mesh.material.uniforms["maxAmount"].value = maxAmount;
+    }
+    
     this.flagUpdate();
   }
 
@@ -315,14 +315,12 @@ class BufferGeometryModelLayer implements ModelLayer {
     return this.positions.count();
   }
 
-  protected updateVertexColor(vertexIndex: number, color: THREE.Color): void {
-    this.colors.set([color.r, color.g, color.b], vertexIndex * 3);
-    this.alpha.set([1.0], vertexIndex);
+  protected updateVertexVisitAmount(vertexIndex: number, visitAmount: number): void {
+    this.visitAmount.set([1.0], vertexIndex);
   }
 
   protected flagUpdate() {
-    this.colorAttribute.needsUpdate = true;
-    this.alphaAttribute.needsUpdate = true;
+    this.visitAmountAttribute.needsUpdate = true;
   }
 }
 
@@ -332,7 +330,7 @@ class WallModelLayer extends BufferGeometryModelLayer {
   }
 
   emitVertex(
-      location: THREE.Vector3, color?: THREE.Color,
+      location: THREE.Vector3, color: number,
       normal?: THREE.Vector3): number {
     const vertexIndex = super.emitVertex(location, color, normal);
     super.emitVertex(
@@ -343,7 +341,7 @@ class WallModelLayer extends BufferGeometryModelLayer {
 
   emitRectangle(
       frontLeftVertex: number, frontRightVertex: number, backLeftVertex: number,
-      backRightVertex: number, color?: THREE.Color) {
+      backRightVertex: number) {
     const topFrontLeft = (frontLeftVertex * 2);
     const bottomFrontLeft = topFrontLeft + 1;
 
@@ -359,25 +357,23 @@ class WallModelLayer extends BufferGeometryModelLayer {
     // front (topFrontLeft, topFrontRight, bottomFrontRight, bottomFrontLeft)
     this._emitRectangle(
         topFrontLeft, topFrontRight, bottomFrontRight, bottomFrontLeft, true,
-        false, color);
+        false);
 
     // back (topBackLeft, topBackRight, bottomBackRight, bottomBackLeft)
     this._emitRectangle(
-        topBackLeft, topBackRight, bottomBackRight, bottomBackLeft, false, true,
-        color);
+        topBackLeft, topBackRight, bottomBackRight, bottomBackLeft, false, true);
 
     // left (topFrontLeft, topBackLeft, bottomBackLeft, bottomFrontLeft)
     this._emitRectangle(
-        topFrontLeft, topBackLeft, bottomBackLeft, bottomFrontLeft, false, true,
-        color);
+        topFrontLeft, topBackLeft, bottomBackLeft, bottomFrontLeft, false, true);
 
     // right (topFrontRight, topBackRight, bottomBackRight, bottomFrontRight)
     this._emitRectangle(
         topFrontRight, topBackRight, bottomBackRight, bottomFrontRight, true,
-        false, color);
+        false);
   }
 
-  updateGeometryColor(rectUpdate: RectangleUpdatePointer, color: THREE.Color):
+  updateGeometryVisitAmount(rectUpdate: RectangleUpdatePointer, visitAmount: number, maxAmount: number):
       void {}
 
   private _emitRectangle(
@@ -449,7 +445,7 @@ class BorderedRectangleModelLayer implements ModelLayer {
   }
 
   emitVertex(
-      location: THREE.Vector3, color?: THREE.Color,
+      location: THREE.Vector3, color: number,
       normal?: THREE.Vector3): number {
     let solidIndex = 0;
 
@@ -470,43 +466,43 @@ class BorderedRectangleModelLayer implements ModelLayer {
     throw new Error('Vertex index not implemented');
   }
 
-  emitTriangle(a: number, b: number, c: number, color?: THREE.Color): number {
+  emitTriangle(a: number, b: number, c: number): number {
     throw new Error('Not Implemented');
   }
 
   emitRectangle(
-      a: number, b: number, c: number, d: number, color?: THREE.Color): void {
+      a: number, b: number, c: number, d: number): void {
     let solidIndex = 0;
 
     if (this.enableSolidLayer && this.solidLayer) {
-      this.solidLayer.emitRectangle(a, b, c, d, color);
+      this.solidLayer.emitRectangle(a, b, c, d);
     }
 
     if (this.enableWallLayer && this.wallLayer) {
-      this.wallLayer.emitRectangle(a, b, c, d, color);
+      this.wallLayer.emitRectangle(a, b, c, d);
     }
 
     if (this.enableLineLayer && this.lineLayer) {
-      this.lineLayer.emitRectangle(a, b, c, d, color);
+      this.lineLayer.emitRectangle(a, b, c, d);
     }
   }
 
-  emitLine(a: number, b: number, color?: THREE.Color): number {
+  emitLine(a: number, b: number): number {
     throw new Error('Not Implemented');
   }
 
-  updateGeometryColor(rectUpdate: RectangleUpdatePointer, color: THREE.Color):
+  updateGeometryVisitAmount(rectUpdate: RectangleUpdatePointer, visitAmount: number, maxAmount: number):
       void {
     if (this.enableLineLayer && this.lineLayer) {
-      this.lineLayer.updateGeometryColor(rectUpdate, color);
+      this.lineLayer.updateGeometryVisitAmount(rectUpdate, visitAmount, maxAmount);
     }
 
     if (this.enableWallLayer && this.wallLayer) {
-      this.wallLayer.updateGeometryColor(rectUpdate, color);
+      this.wallLayer.updateGeometryVisitAmount(rectUpdate, visitAmount, maxAmount);
     }
 
     if (this.enableSolidLayer && this.solidLayer) {
-      this.solidLayer.updateGeometryColor(rectUpdate, color);
+      this.solidLayer.updateGeometryVisitAmount(rectUpdate, visitAmount, maxAmount);
     }
   }
 
@@ -594,9 +590,9 @@ export class MultiLayerModel implements RenderGroup, DebugSource {
         vertexShader: VERTEX_SHADER_SOURCE,
         fragmentShader: FRAGMENT_SHADER_SOURCE,
         transparent: true,
-        vertexColors: THREE.VertexColors,
-        opacity: 0.5,
-        uniforms: {}
+        uniforms: {
+          "maxAmount": {value: 100000}
+        }
       });
     }
 
@@ -617,7 +613,7 @@ export class MultiLayerModel implements RenderGroup, DebugSource {
   /**
    * Draw a rectangle at a given layer on the model.
    */
-  drawRectangle(layer: number, rectangle: Rectangle, color: THREE.Color):
+  drawRectangle(layer: number, rectangle: Rectangle, color: number):
       RectangleUpdatePointer {
     const modelLayer = this.getLayer(layer);
 
@@ -636,7 +632,7 @@ export class MultiLayerModel implements RenderGroup, DebugSource {
         color, new THREE.Vector3(1, 1, -1));
 
     const updateIndex = modelLayer.emitRectangle(
-        topLeftVert, topRightVert, bottomLeftVert, bottomRightVert, color);
+        topLeftVert, topRightVert, bottomLeftVert, bottomRightVert);
 
     return {
       a: topLeftVert,
@@ -646,11 +642,11 @@ export class MultiLayerModel implements RenderGroup, DebugSource {
     };
   }
 
-  updateColor(
-      layer: number, rectUpdate: RectangleUpdatePointer, color: THREE.Color) {
+  updateVisitAmount(
+      layer: number, rectUpdate: RectangleUpdatePointer, visitAmount: number, maxAmount: number) {
     const modelLayer = this.getLayer(layer);
 
-    modelLayer.updateGeometryColor(rectUpdate, color);
+    modelLayer.updateGeometryVisitAmount(rectUpdate, visitAmount, maxAmount);
   }
 
   /**

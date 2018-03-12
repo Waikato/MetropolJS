@@ -62,8 +62,8 @@ export class Config {
     },
 
     'quality': {
-      'enable_lighting': true,
-      'enable_ssao': true,
+      'enable_lighting': false,
+      'enable_ssao': false,
     }
   };
 
