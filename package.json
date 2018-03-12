@@ -4,7 +4,7 @@
     "description": "MetropolJS: Visualizing and Debugging Large-Scale JavaScript Program Structure with Treemaps",
     "scripts": {
         "start:dev": "parcel --no-hmr -p 8080 --https src/index.html",
-        "publish:web": "parcel build -d docs src/index.html",
+        "publish:web": "parcel build -d docs --public-url /MetropolJS/ src/index.html",
         "test": "echo \"Error: no test specified\" && exit 1",
         "start:node_test": "node --inspect --inspect-port=9230 example.js",
         "check": "gts check",
