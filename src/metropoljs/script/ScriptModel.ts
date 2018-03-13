@@ -1,7 +1,7 @@
 import * as estree from 'estree';
 import * as THREE from 'three';
 
-import {Bag, clamp, countNodeChildren, Direction, getNodeChildren, Rectangle, RenderGroup} from '../common';
+import {Bag, clamp, countNodeChildren, Direction, getNodeChildren, MetropolJSNode, MetropolJSRootNode, Rectangle, RenderGroup} from '../common';
 import {ScriptStepNotifyEvent} from '../debugger/AbstractDebugger';
 import {EventBus} from '../EventBus';
 import {ScriptColorMap} from '../ScriptColorMap';
@@ -10,7 +10,7 @@ import {MultiLayerModel} from './MultiLayerModel';
 import {RenderTree} from './RenderTree';
 
 interface RenderTask {
-  node: estree.Node;
+  node: MetropolJSNode;
   treeNode: RenderTree;
   rect: Rectangle;
   layer: number;
@@ -39,7 +39,7 @@ export class ScriptModel implements RenderGroup {
   /**
    * A structure mapping AST nodes to the position on the binary tree.
    */
-  private nodeRenderMap: Map<estree.Node, RenderTree> = new Map();
+  private nodeRenderMap: Map<MetropolJSNode, RenderTree> = new Map();
 
   private eventQueue: ScriptStepNotifyEvent[] = [];
 
@@ -69,15 +69,18 @@ export class ScriptModel implements RenderGroup {
     scriptList.forEach((script) => {
       this.scriptList.push(script);
 
-      const nodes = countNodeChildren(script.program);
-
       const rootRectangle = script.baseRectangle;
 
       script.tree = new RenderTree('Root', rootRectangle, 0);
 
+      const rootNode:
+          MetropolJSRootNode = {type: 'Root', program: script.program};
+
+      const nodes = countNodeChildren(rootNode);
+
       this.renderToCanvas(
-          script.program, script.tree, getNodeChildren(script.program), nodes,
-          0, rootRectangle);
+          rootNode, script.tree, getNodeChildren(rootNode), nodes, 0,
+          rootRectangle);
     });
 
     renderStep();
@@ -95,10 +98,12 @@ export class ScriptModel implements RenderGroup {
         throw new Error('Script does not have tree');
       }
 
+      this.validateTree(script.tree, 0);
+
       this.fastRenderToCanvas(script.tree);
     });
 
-    this.loaded = true;
+    // this.loaded = true;
   }
 
   isLoaded() {
@@ -139,7 +144,8 @@ export class ScriptModel implements RenderGroup {
       return;
     }
 
-    this.model.updateVisitAmount(pNode.depth, pNode.updateIndex, node.count, this.maxAmount);
+    this.model.updateVisitAmount(
+        pNode.depth, pNode.updateIndex, node.count, this.maxAmount);
   }
 
   getTreeFromNode(node: estree.Node): RenderTree|null {
@@ -174,15 +180,34 @@ export class ScriptModel implements RenderGroup {
     console.groupEnd();
   }
 
+  private drawTreeNode(tree: RenderTree) {
+    if (!this.model) {
+      throw new Error('Should not happen');
+    }
+
+    if (tree.updateIndex !== null) {
+      tree.updateIndex =
+          this.model.drawRectangle(tree.depth, tree.location, tree.color);
+
+      if (tree.count > 0) {
+        this.updateNode(tree);
+      }
+
+      if (tree.node) {
+        this.nodeRenderMap.set(tree.node, tree);
+      }
+    }
+  }
+
   /**
    * The main rendering function. Given a node and a list of the children lay
    * them out and render them using Binary Space Partitioning.
    */
   private renderToCanvas(
-      node: estree.Node, treeNode: RenderTree, children: estree.Node[],
-      size: number, layer: number, rect: Rectangle) {
+      node: MetropolJSNode, treeNode: RenderTree, children: MetropolJSNode[],
+      size: number, depth: number, location: Rectangle) {
     if (!this.model) {
-      return;
+      throw new Error('Should not happen');
     }
 
     if (!this.colorMap) {
@@ -202,35 +227,57 @@ export class ScriptModel implements RenderGroup {
       const currentNode = children[0];
 
       if (currentNode === null || currentNode === undefined) {
-        return;
+        throw new Error('currentNode is null|undefined');
       }
 
       const paddingScale = this.getPaddingForNode(currentNode);
 
-      const paddingX = clamp(rect.w * paddingScale, 0.001, 0.3);
-      const paddingY = clamp(rect.h * paddingScale, 0.001, 0.3);
+      const paddingX = clamp(location.w * paddingScale, 0.001, 0.3);
+      const paddingY = clamp(location.h * paddingScale, 0.001, 0.3);
 
-      const newRect = Object.assign({}, rect);
+      const newLocation = Object.assign({}, location);
 
-      newRect.x += paddingX;
-      newRect.y += paddingY;
-      newRect.w -= (paddingX * 2);
-      newRect.h -= (paddingY * 2);
+      newLocation.x += paddingX;
+      newLocation.y += paddingY;
+      newLocation.w -= (paddingX * 2);
+      newLocation.h -= (paddingY * 2);
 
-      treeNode.updateIndex = this.model.drawRectangle(
-          layer, newRect,
-          this.colorMap.getColorFromType(currentNode.type, layer));
+      if (treeNode.updateIndex !== null) {
+        console.error('Node already drawn', node);
+        throw new Error('Node already drawn');
+      }
 
       treeNode.type = currentNode.type;
-      treeNode.location = newRect;
+      treeNode.color = this.colorMap.getColorFromType(treeNode.type, depth);
+      treeNode.location = newLocation;
       treeNode.node = currentNode;
-      treeNode.depth = layer;
+      treeNode.depth = depth;
 
-      this.nodeRenderMap.set(currentNode, treeNode);
+      treeNode.updateIndex = {a: 0, b: 0, c: 0, d: 0};
 
-      this.addRenderTask(
-          {node: currentNode, treeNode, layer: layer + 1, rect: newRect});
+      this.drawTreeNode(treeNode);
+
+      const childCount = getNodeChildren(currentNode).length;
+
+      if (childCount === 0) {
+        return;
+      } else if (childCount > 1) {
+        this.addRenderTask(
+            {node: currentNode, treeNode, layer: depth + 1, rect: newLocation});
+      } else if (childCount === 1) {
+        const newTreeNode = new RenderTree(treeNode.type, newLocation, depth);
+        treeNode.a = newTreeNode;
+        this.addRenderTask({
+          node: currentNode,
+          treeNode: newTreeNode,
+          layer: depth + 1,
+          rect: newLocation
+        });
+      }
     } else {
+      // Update the current type of this treenode to the type of the node.
+      treeNode.type = node.type;
+
       // Step 1: Split the Array in half
       const halfwayTarget = Math.round(size / 2);
 
@@ -258,47 +305,63 @@ export class ScriptModel implements RenderGroup {
 
       const dist = clamp(currentTotal / size, 0.01, 0.99);
 
-      const splitOptions = this.splitRect(rect, dist);
+      const splitOptions = this.splitRect(location, dist);
 
-      const splitRects = rect.w > rect.h ? splitOptions[0] : splitOptions[1];
+      const splitRects =
+          location.w > location.h ? splitOptions[0] : splitOptions[1];
 
-      treeNode.a = new RenderTree(treeNode.type, splitRects[0], layer);
+      treeNode.a = new RenderTree(treeNode.type, splitRects[0], depth);
 
       this.renderToCanvas(
           node, treeNode.a, children.slice(0, halfwayPoint), currentTotal,
-          layer, splitRects[0]);
+          depth, splitRects[0]);
 
-      treeNode.b = new RenderTree(treeNode.type, splitRects[1], layer);
+      treeNode.b = new RenderTree(treeNode.type, splitRects[1], depth);
 
       this.renderToCanvas(
           node, treeNode.b, children.slice(halfwayPoint), size - currentTotal,
-          layer, splitRects[1]);
+          depth, splitRects[1]);
     }
   }
 
   private fastRenderToCanvas(tree: RenderTree) {
     if (!this.model) {
-      return;
+      throw new Error('Should not happen');
     }
 
-    if (tree.location && tree.node && tree.updateIndex !== null) {
-      tree.updateIndex = this.model.drawRectangle(
-          tree.depth, tree.location,
-          this.colorMap.getColorFromType(tree.type, tree.depth));
+    this.drawTreeNode(tree);
 
-      if (tree.count > 0) {
-        this.updateNode(tree);
-      }
-
-      this.nodeRenderMap.set(tree.node, tree);
-    }
-
-    if (tree.a) {
+    if (tree.a !== null) {
       this.fastRenderToCanvas(tree.a);
     }
 
-    if (tree.b) {
+    if (tree.b !== null) {
       this.fastRenderToCanvas(tree.b);
+    }
+  }
+
+  private validateTree(tree: RenderTree, depth: number) {
+    if (tree.depth !== depth) {
+      console.error('depth validation failed', tree, depth);
+      throw new Error(`Tree Validation Failed tree.depth{${
+          tree.depth}} !== depth{${depth}}`);
+    }
+
+    if (tree.updateIndex) {
+      depth += 1;
+      if (tree.color === undefined || tree.color === null || tree.color < 0 ||
+          tree.color > 1) {
+        console.error('color validation failed', tree, depth);
+        throw new Error(`Tree Validation Failed tree.color{${tree.color}}`);
+      }
+    }
+
+    if (tree.a !== null) {
+      this.validateTree(tree.a, depth);
+    }
+
+    if (tree.b !== null) {
+      this.validateTree(tree.b, depth);
     }
   }
 
@@ -389,7 +452,7 @@ export class ScriptModel implements RenderGroup {
     ];
   }
 
-  private getPaddingForNode(node: estree.Node) {
+  private getPaddingForNode(node: MetropolJSNode) {
     if (node.type === 'FunctionDeclaration') {
       return this.paddingScale * 5;
     } else if (node.type === 'BlockStatement') {

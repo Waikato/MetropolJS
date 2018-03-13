@@ -40,10 +40,10 @@ loadMetropolJSConfig({
     // Mostly used when city mode is enabled.
     'quality': {
         // Should lighting be enabled and added to the scene (true|false).
-        'enable_lighting': true,
+        'enable_lighting': false,
 
         // Should SSAO be enabled (true|false).
         // Warning will negatively impact performance.
-        'enable_ssao': true,
+        'enable_ssao': false,
     }
 });

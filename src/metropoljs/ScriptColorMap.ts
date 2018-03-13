@@ -9,60 +9,45 @@ export enum RendererColors {
   Grey
 }
 
-// const defaultColorMap: Bag<string> = {
-//   'ExpressionStatement': 0,
-//   'undefined': '000000',
-//   'Literal': '161c1a',
-//   'FunctionExpression': '161c1a',
-//   'Identifier': '2d3834',
-//   'BlockStatement': '2d3834',
-//   'FunctionDeclaration': '44544f',
-//   'VariableDeclaration': '44544f',
-//   'IfStatement': '44544f',
-//   'ClassDeclaration': '44544f',
-//   'VariableDeclarator': '5b7069',
-//   'AssignmentExpression': '5b7069',
-//   'MemberExpression': '5b7069',
-//   'CallExpression': '5b7069',
-//   'ClassBody': '5b7069',
-//   'RestElement': '5b7069',
-//   'UnaryExpression': '5b7069',
-//   'ForOfStatement': '728c83',
-//   'ReturnStatement': '728c83',
-//   'ForStatement': '728c83',
-//   'TryStatement': '728c83',
-//   'ObjectExpression': '728c83',
-//   'ArrayExpression': '728c83',
-//   'WhileStatement': '728c83',
-//   'ArrowFunctionExpression': '728c83',
-//   'ObjectPattern': '728c83',
-//   'MethodDefinition': '728c83',
-//   'BinaryExpression': '728c83',
-//   'LogicalExpression': '728c83',
-//   'ConditionalExpression': '728c83',
-//   'SwitchStatement': '728c83',
-//   'ThrowStatement': '728c83',
-//   'ForInStatement': '728c83',
-//   'NewExpression': '728c83',
-//   'TemplateLiteral': '728c83',
-//   'UpdateExpression': '8ea39c',
-//   'Property': '8ea39c',
-//   'SequenceExpression': '8ea39c',
-//   'CatchClause': '5b7069',
-//   'SwitchCase': '8ea39c',
-//   'ClassExpression': '8ea39c',
-//   'TemplateElement': '8ea39c',
-//   'ThisExpression': 'aabab5',
-//   'ArrayPattern': 'aabab5',
-//   'BreakStatement': 'aabab5',
-//   'AssignmentPattern': 'aabab5',
-//   'DoWhileStatement': 'aabab5',
-//   'ContinueStatement': 'c6d1cd',
-//   'EmptyStatement': '8ea39c',
-//   'MetaProperty': 'c6d1cd',
-//   'Super': 'ffffff',
-//   'SpreadElement': 'ffffff'
-// };
+const defaultColorMap: Bag<number> = {
+  'Program': 0.00,
+  'ExpressionStatement': 0.01,
+  'VariableDeclaration': 0.02,
+  'IfStatement': 0.03,
+  'EmptyStatement': 0.04,
+  'CallExpression': 0.05,
+  'AssignmentExpression': 0.06,
+  'VariableDeclarator': 0.07,
+  'BinaryExpression': 0.08,
+  'BlockStatement': 0.09,
+  'TryStatement': 0.10,
+  'FunctionExpression': 0.11,
+  'MemberExpression': 0.12,
+  'ThisExpression': 0.13,
+  'ObjectExpression': 0.14,
+  'Identifier': 0.40,
+  'Literal': 0.50,
+  'CatchClause': 0.17,
+  'LogicalExpression': 0.18,
+  'LabeledStatement': 0.19,
+  'ReturnStatement': 0.20,
+  'ConditionalExpression': 0.21,
+  'UnaryExpression': 0.22,
+  'UpdateExpression': 0.23,
+  'FunctionDeclaration': 0.24,
+  'ArrayExpression': 0.25,
+  'NewExpression': 0.26,
+  'SequenceExpression': 0.27,
+  'Property': 0.28,
+  'ForStatement': 0.29,
+  'ForInStatement': 0.30,
+  'SwitchStatement': 0.31,
+  'ThrowStatement': 0.32,
+  'DoWhileStatement': 0.33,
+  'SwitchCase': 0.34,
+  'BreakStatement': 0.35,
+  'ContinueStatement': 0.36
+};
 
 export class ScriptColorMap implements DebugSource {
   /**
@@ -76,9 +61,9 @@ export class ScriptColorMap implements DebugSource {
   private currentColors: RendererColors = RendererColors.XRay;
 
   constructor() {
-    // Object.keys(defaultColorMap).forEach((key) => {
-    //   this.colorMap.set(key, new THREE.Color('#' + defaultColorMap[key]));
-    // });
+    Object.keys(defaultColorMap).forEach((key) => {
+      this.colorMap.set(key, defaultColorMap[key]);
+    });
   }
 
   /**
@@ -107,6 +92,9 @@ export class ScriptColorMap implements DebugSource {
    * current color scheme.
    */
   getColorFromType(typeName: string, layer: number): number {
+    if (typeName === undefined) {
+      throw new Error('Attempt to get color for undefined type');
+    }
     if (!this.colorMap.has(typeName)) {
       this.colorMap.set(typeName, this.getColor(layer));
     }

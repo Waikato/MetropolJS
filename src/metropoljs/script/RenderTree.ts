@@ -1,8 +1,9 @@
 import * as estree from 'estree';
 import * as THREE from 'three';
 
-import {Rectangle} from '../common';
-import {RectangleUpdatePointer} from './MultiLayerModel';
+import {MetropolJSNode, Rectangle} from '../common';
+
+import {RectangleUpdatePointer} from './ModelLayer';
 
 /**
  * Represents one node in the binary tree. Contains a bounding box for
@@ -22,9 +23,11 @@ export class RenderTree {
   /**
    * The node this represents on the Abstract Syntax Tree.
    */
-  node: estree.Node|null = null;
+  node: MetropolJSNode|null = null;
 
   updateIndex: RectangleUpdatePointer|null = null;
+
+  color: number = 0;
 
   count: number = 0;
 
@@ -73,7 +76,7 @@ export class RenderTree {
     return this.depth;
   }
 
-  getNode(): estree.Node|null {
+  getNode(): MetropolJSNode|null {
     return this.node;
   }
 }

@@ -1,5 +1,12 @@
 import * as estree from 'estree';
 
+export interface MetropolJSRootNode {
+  type: 'Root';
+  program: estree.Program;
+}
+
+export type MetropolJSNode = estree.Node|MetropolJSRootNode;
+
 /**
  * Clamp a number between 2 values.
  */
@@ -36,11 +43,12 @@ export enum Direction {
 /**
  * Get a list of all child nodes under a given node.
  */
-export function getNodeChildren(node: estree.Node): estree.Node[] {
-  const ret: estree.Node[] = [];
+export function getNodeChildren(node: MetropolJSNode): MetropolJSNode[] {
+  const ret: MetropolJSNode[] = [];
 
   // We only care about objects not primitive values.
-  const nodeObj = (node as {}) as Bag<estree.Node|estree.Node[]|undefined>;
+  const nodeObj =
+      (node as {}) as Bag<MetropolJSNode|MetropolJSNode[]|undefined>;
 
   Object.keys(nodeObj).forEach((key) => {
     const value = nodeObj[key];
@@ -58,13 +66,13 @@ export function getNodeChildren(node: estree.Node): estree.Node[] {
     }
   });
 
-  return ret.filter((a) => a !== null);
+  return ret.filter((a) => a !== null && a !== undefined);
 }
 
 /**
  * Count the total number of children a node has recursively.
  */
-export function countNodeChildren(node: estree.Node): number {
+export function countNodeChildren(node: MetropolJSNode): number {
   if (node === null || node === undefined) {
     return 0;
   }
