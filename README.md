@@ -1,6 +1,6 @@
 # MetropolJS
 
-**Paper PDF**: `TODO: Put an Open Access link to the paper`
+**Paper PDF**: [docs/paper/metropolJS.pdf](docs/paper/metropolJS.pdf)
 **Live Demo**: https://waikato.github.io/MetropolJS/
 
 ## Introduction
@@ -80,11 +80,11 @@ loadMetropolJSConfig({
     // Mostly used when city mode is enabled.
     'quality': {
         // Should lighting be enabled and added to the scene (true|false).
-        'enable_lighting': true,
+        'enable_lighting': false,
 
         // Should SSAO be enabled (true|false).
         // Warning will negatively impact performance.
-        'enable_ssao': true,
+        'enable_ssao': false,
     }
 });
 ```
