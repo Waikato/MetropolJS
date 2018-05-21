@@ -2,8 +2,9 @@ import * as estree from 'estree';
 import * as THREE from 'three';
 
 import {Bag, clamp, countNodeChildren, Direction, getNodeChildren, MetropolJSNode, MetropolJSRootNode, Rectangle, RenderGroup} from '../common';
-import {ScriptStepNotifyEvent} from '../debugger/AbstractDebugger';
+import {ScriptStackNotifyEvent, ScriptStepNotifyEvent} from '../debugger/AbstractDebugger';
 import {EventBus} from '../EventBus';
+import {OverlayRenderer} from '../OverlayRenderer';
 import {ScriptColorMap} from '../ScriptColorMap';
 
 import {MultiLayerModel} from './MultiLayerModel';
@@ -44,11 +45,16 @@ export class ScriptModel implements RenderGroup {
   private eventQueue: ScriptStepNotifyEvent[] = [];
 
   private notifyListener: (ev: ScriptStepNotifyEvent) => void = () => {};
+  private stackListener: (ev: ScriptStackNotifyEvent) => void = () => {};
 
   private maxAmount = 0;
 
+  private overlayRenderer: OverlayRenderer = new OverlayRenderer();
+
   constructor(private eventBus: EventBus, private colorMap: ScriptColorMap) {
     this.connectBus();
+
+    this.group.add(this.overlayRenderer.getRenderGroup());
   }
 
   load(scriptList: RenderScript[]) {
@@ -152,8 +158,19 @@ export class ScriptModel implements RenderGroup {
     return this.nodeRenderMap.get(node) || null;
   }
 
+  getNodeLocation(node: estree.Node): THREE.Vector2|null {
+    const tree = this.nodeRenderMap.get(node);
+
+    if (tree === undefined) {
+      return null;
+    }
+
+    return tree.getCenter();
+  }
+
   dispose() {
     this.eventBus.removeListener('script.stepNotify', this.notifyListener);
+    this.eventBus.removeListener('script.stackNotify', this.stackListener);
     if (this.model) {
       this.model.dispose();
     }
@@ -404,6 +421,16 @@ export class ScriptModel implements RenderGroup {
       }
     };
     this.eventBus.addListener('script.stepNotify', this.notifyListener);
+
+    this.stackListener = (ev: ScriptStackNotifyEvent) => {
+      if (!this.ownsScript(ev.scriptId)) {
+        return;
+      }
+      if (this.loaded) {
+        this.onStackNotify(ev);
+      }
+    };
+    this.eventBus.addListener('script.stackNotify', this.stackListener);
   }
 
   private ownsScript(scriptId: string) {
@@ -418,6 +445,13 @@ export class ScriptModel implements RenderGroup {
       this.maxAmount = Math.max(node.count, this.maxAmount);
       this.updateNode(node);
     }
+  }
+
+  private onStackNotify(ev: ScriptStackNotifyEvent) {
+    const points = ev.stack.map((node) => this.getNodeLocation(node))
+                       .filter((point) => (point !== null)) as THREE.Vector2[];
+
+    this.overlayRenderer.renderLine(points);
   }
 
   /**

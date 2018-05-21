@@ -3,7 +3,7 @@ import * as estree from 'estree';
 
 import {EventBus} from '../EventBus';
 
-import {AbstractDebugger, ScriptLoadedEvent, ScriptStepNotifyEvent} from './AbstractDebugger';
+import {AbstractDebugger, ScriptLoadedEvent, ScriptStackNotifyEvent, ScriptStepNotifyEvent} from './AbstractDebugger';
 import {Interpreter} from './interpreter/interpreter';
 
 interface InterpreterScript {
@@ -95,6 +95,13 @@ export class InterpreterDebugger extends AbstractDebugger {
           'script.stepNotify',
           {dbg: this, scriptId: '0', node: currentNode, count: 1} as
               ScriptStepNotifyEvent);
+
+      const currentStack = this.interpreter.getAllNodes();
+
+      this.eventBus.emit(
+          'script.stackNotify',
+          {dbg: this, scriptId: '0', stack: currentStack} as
+              ScriptStackNotifyEvent);
 
       setImmediate(stepFunction.bind(this));
     };

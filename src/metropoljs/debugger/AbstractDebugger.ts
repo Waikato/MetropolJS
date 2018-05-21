@@ -17,6 +17,13 @@ export interface ScriptStepNotifyEvent {
   count: number;
 }
 
+export interface ScriptStackNotifyEvent {
+  dbg: AbstractDebugger;
+
+  scriptId: string;
+  stack: estree.Node[];
+}
+
 export abstract class AbstractDebugger implements DebugSource {
   constructor() {}
 
