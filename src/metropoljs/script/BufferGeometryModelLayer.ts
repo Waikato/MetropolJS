@@ -12,6 +12,7 @@ export class BufferGeometryModelLayer implements ModelLayer {
   private positions: Float32DynamicArray;
   private colorAmount: Float32DynamicArray;
   private visitAmount: Float32DynamicArray;
+  private poiAmount: Float32DynamicArray;
   private indexes: Uint32DynamicArray;
   private normals: Float32DynamicArray|null = null;
 
@@ -27,6 +28,7 @@ export class BufferGeometryModelLayer implements ModelLayer {
   private positionAttribute: THREE.Float32BufferAttribute;
   private colorAmountAttribute: THREE.Float32BufferAttribute;
   private visitAmountAttribute: THREE.Float32BufferAttribute;
+  private poiAmountAttribute: THREE.Float32BufferAttribute;
   private indexAttribute: THREE.Uint32BufferAttribute;
   private normalAttribute: THREE.Float32BufferAttribute|null = null;
 
@@ -73,6 +75,13 @@ export class BufferGeometryModelLayer implements ModelLayer {
     this.visitAmountAttribute.normalized = false;
     this.visitAmountAttribute.setDynamic(true);
 
+    this.poiAmount = new DynamicArrayBuffer(Float32Array, 1);
+
+    this.poiAmountAttribute =
+        new THREE.BufferAttribute(this.poiAmount.getArray() || expect(), 1);
+    this.poiAmountAttribute.normalized = false;
+    this.poiAmountAttribute.setDynamic(true);
+
     this.indexes = new DynamicArrayBuffer(Uint32Array, 1);
 
     this.indexAttribute =
@@ -81,6 +90,7 @@ export class BufferGeometryModelLayer implements ModelLayer {
     this.buffer.addAttribute('position', this.positionAttribute);
     this.buffer.addAttribute('colorAmount', this.colorAmountAttribute);
     this.buffer.addAttribute('visitAmount', this.visitAmountAttribute);
+    this.buffer.addAttribute('poiAmount', this.poiAmountAttribute);
     this.buffer.setIndex(this.indexAttribute);
 
     if (this.enableNormals) {
@@ -118,12 +128,21 @@ export class BufferGeometryModelLayer implements ModelLayer {
 
     this.visitAmount.push(0);
 
-    const newAlphaArray = this.visitAmount.getArray();
-    if (newAlphaArray) {
-      this.visitAmountAttribute.setArray(newAlphaArray);
+    const newVisitAmount = this.visitAmount.getArray();
+    if (newVisitAmount) {
+      this.visitAmountAttribute.setArray(newVisitAmount);
     }
 
     this.visitAmountAttribute.needsUpdate = true;
+
+    this.poiAmount.push(0);
+
+    const newPoiAmount = this.poiAmount.getArray();
+    if (newPoiAmount) {
+      this.poiAmountAttribute.setArray(newPoiAmount);
+    }
+
+    this.poiAmountAttribute.needsUpdate = true;
 
     this.positions.push(location.x, location.y, location.z);
 
@@ -185,11 +204,12 @@ export class BufferGeometryModelLayer implements ModelLayer {
   }
 
   updateGeometryVisitAmount(
-      rectUpdate: RectangleUpdatePointer, visitAmount: number) {
-    this.updateVertexVisitAmount(rectUpdate.a, visitAmount);
-    this.updateVertexVisitAmount(rectUpdate.b, visitAmount);
-    this.updateVertexVisitAmount(rectUpdate.c, visitAmount);
-    this.updateVertexVisitAmount(rectUpdate.d, visitAmount);
+      rectUpdate: RectangleUpdatePointer, visitAmount: number,
+      poiAmount: number) {
+    this.updateVertexVisitAmount(rectUpdate.a, visitAmount, poiAmount);
+    this.updateVertexVisitAmount(rectUpdate.b, visitAmount, poiAmount);
+    this.updateVertexVisitAmount(rectUpdate.c, visitAmount, poiAmount);
+    this.updateVertexVisitAmount(rectUpdate.d, visitAmount, poiAmount);
 
     this.flagUpdate();
   }
@@ -218,12 +238,14 @@ export class BufferGeometryModelLayer implements ModelLayer {
     }
   }
 
-  protected updateVertexVisitAmount(vertexIndex: number, visitAmount: number):
-      void {
+  protected updateVertexVisitAmount(
+      vertexIndex: number, visitAmount: number, poiAmount: number): void {
     this.visitAmount.set([visitAmount], vertexIndex);
+    this.poiAmount.set([poiAmount], vertexIndex);
   }
 
   protected flagUpdate() {
     this.visitAmountAttribute.needsUpdate = true;
+    this.poiAmountAttribute.needsUpdate = true;
   }
 }

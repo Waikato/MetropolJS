@@ -2,7 +2,7 @@ import * as estree from 'estree';
 import * as THREE from 'three';
 
 import {Bag, clamp, countNodeChildren, Direction, getNodeChildren, MetropolJSNode, MetropolJSRootNode, Rectangle, RenderGroup} from '../common';
-import {ScriptStackNotifyEvent, ScriptStepNotifyEvent} from '../debugger/AbstractDebugger';
+import {ScriptPOINotifyEvent, ScriptStackNotifyEvent, ScriptStepNotifyEvent} from '../debugger/AbstractDebugger';
 import {EventBus} from '../EventBus';
 import {OverlayRenderer} from '../OverlayRenderer';
 import {ScriptColorMap} from '../ScriptColorMap';
@@ -46,6 +46,7 @@ export class ScriptModel implements RenderGroup {
 
   private notifyListener: (ev: ScriptStepNotifyEvent) => void = () => {};
   private stackListener: (ev: ScriptStackNotifyEvent) => void = () => {};
+  private poiNotifyListener: (ev: ScriptPOINotifyEvent) => void = () => {};
 
   private maxAmount = 0;
 
@@ -151,7 +152,8 @@ export class ScriptModel implements RenderGroup {
     }
 
     this.model.updateVisitAmount(
-        pNode.depth, pNode.updateIndex, node.count, this.maxAmount);
+        pNode.depth, pNode.updateIndex, node.count, node.poiCount,
+        this.maxAmount);
   }
 
   getTreeFromNode(node: estree.Node): RenderTree|null {
@@ -170,6 +172,7 @@ export class ScriptModel implements RenderGroup {
 
   dispose() {
     this.eventBus.removeListener('script.stepNotify', this.notifyListener);
+    this.eventBus.removeListener('script.poiNotify', this.poiNotifyListener);
     this.eventBus.removeListener('script.stackNotify', this.stackListener);
     if (this.model) {
       this.model.dispose();
@@ -422,6 +425,16 @@ export class ScriptModel implements RenderGroup {
     };
     this.eventBus.addListener('script.stepNotify', this.notifyListener);
 
+    this.poiNotifyListener = (ev: ScriptPOINotifyEvent) => {
+      if (!this.ownsScript(ev.scriptId)) {
+        return;
+      }
+      if (this.loaded) {
+        this.onPoiNotify(ev);
+      }
+    };
+    this.eventBus.addListener('script.poiNotify', this.poiNotifyListener);
+
     this.stackListener = (ev: ScriptStackNotifyEvent) => {
       if (!this.ownsScript(ev.scriptId)) {
         return;
@@ -443,6 +456,14 @@ export class ScriptModel implements RenderGroup {
     if (node) {
       node.count += ev.count;
       this.maxAmount = Math.max(node.count, this.maxAmount);
+      this.updateNode(node);
+    }
+  }
+
+  private onPoiNotify(ev: ScriptPOINotifyEvent) {
+    const node = this.getTreeFromNode(ev.node);
+    if (node) {
+      node.poiCount += ev.count;
       this.updateNode(node);
     }
   }

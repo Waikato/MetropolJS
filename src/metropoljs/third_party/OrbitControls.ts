@@ -143,11 +143,14 @@ export class OrbitControls extends THREE.EventDispatcher {
 
   constructor(
       public object: THREE.PerspectiveCamera|THREE.OrthographicCamera,
-      public domElement: HTMLElement|Document) {
+      public domElement: HTMLElement|Document,
+      private bindContextMenu: boolean) {
     super();
 
-    this.domElement.addEventListener(
-        'contextmenu', this.onContextMenu.bind(this), false);
+    if (this.bindContextMenu) {
+      this.domElement.addEventListener(
+          'contextmenu', this.onContextMenu.bind(this), false);
+    }
 
     this.domElement.addEventListener(
         'mousedown', this.onMouseDown.bind(this), false);

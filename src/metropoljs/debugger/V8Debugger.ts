@@ -5,10 +5,10 @@ import * as esprima from 'esprima'
 import * as estree from 'estree';
 import {Client, LikeSocket} from 'noice-json-rpc';
 
-import {Bag, expect, getNodeChildren} from '../common';
+import {Bag, expect, getNodeChildren, MetropolJSNode, MetropolJSRootNode} from '../common';
 import {EventBus} from '../EventBus';
 
-import {AbstractDebugger, ScriptLoadedEvent, ScriptStepNotifyEvent} from './AbstractDebugger';
+import {AbstractDebugger, DebuggerConnectedEvent, ScriptLoadedEvent, ScriptStepNotifyEvent} from './AbstractDebugger';
 
 function createWebsocket(websocketUrl: string): LikeSocket {
   let websocket: WebSocket = new (require('isomorphic-ws'))(websocketUrl);
@@ -86,6 +86,10 @@ export class V8Debugger extends AbstractDebugger {
     // This should work fine
     await (this.api.Profiler.startPreciseCoverage || expect)(
         {detailed: true, callCount: true} as any);
+
+    this.eventBus.emit(
+        'debugger.connected',
+        {dbg: this, type: 'v8'} as DebuggerConnectedEvent);
   }
 
   async step() {
@@ -145,7 +149,7 @@ export class V8Debugger extends AbstractDebugger {
       return false;
     }
 
-    let node: estree.Node|null = null;
+    let node: MetropolJSNode|null = null;
 
     if (range.startLineNumber !== undefined &&
         range.endLineNumber !== undefined &&
@@ -172,10 +176,13 @@ export class V8Debugger extends AbstractDebugger {
     }
   }
 
-  private resolveNodeFromRange(node: estree.Node, start: number, end: number):
-      estree.Node|null {
+  private resolveNodeFromRange(
+      node: MetropolJSNode, start: number, end: number): MetropolJSNode|null {
     // Chrome dev 66 does not support location information in coverage yet. It's
     // in node but not chrome. This function will resolve using range instead.
+    if (node.type === 'Root') {
+      return null;
+    }
 
     if (!node.range) {
       return null;
@@ -205,8 +212,12 @@ export class V8Debugger extends AbstractDebugger {
   }
 
   private resolveNodeFromLocation(
-      node: estree.Node, startLine: number, startCol: number, endLine: number,
-      endCol: number): estree.Node|null {
+      node: MetropolJSNode, startLine: number, startCol: number,
+      endLine: number, endCol: number): MetropolJSNode|null {
+    if (node.type === 'Root') {
+      return null;
+    }
+
     if (!node.loc) {
       return null;
     }
@@ -264,7 +275,9 @@ export class V8Debugger extends AbstractDebugger {
     loadComplete();
 
     this.eventBus.emit(
-        'script.loaded', {dbg: this, scriptId, program} as ScriptLoadedEvent);
+        'script.loaded',
+        {dbg: this, scriptId, filename: scriptUrl, program} as
+            ScriptLoadedEvent);
   }
 
   private async getScript(scriptId: string, scriptUrl: string):

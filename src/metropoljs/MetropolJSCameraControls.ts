@@ -10,7 +10,7 @@ export class MetropolJSCameraControls implements DebugSource {
 
   private orbitControls: OrbitControls;
 
-  constructor(private eventBus: EventBus) {
+  constructor(private eventBus: EventBus, private element: HTMLCanvasElement) {
     const width = 512;
     const height = 512;
 
@@ -26,7 +26,8 @@ export class MetropolJSCameraControls implements DebugSource {
     this.camera.zoom = 5;
     this.camera.updateProjectionMatrix();
 
-    this.orbitControls = new OrbitControls(this.camera, document);
+    this.orbitControls = new OrbitControls(
+        this.camera, element, configObject.rendering['3d_mode']);
 
     if (!configObject.rendering['3d_mode']) {
       this.orbitControls.enableRotate = false;

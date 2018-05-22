@@ -14,7 +14,8 @@ export interface ModelLayer extends RenderGroup, DebugSource {
   emitRectangle(a: number, b: number, c: number, d: number): void;
   emitLine(a: number, b: number): void;
   updateGeometryVisitAmount(
-      rectUpdate: RectangleUpdatePointer, visitAmount: number): void;
+      rectUpdate: RectangleUpdatePointer, visitAmount: number,
+      poiAmount: number): void;
 
   dispose(): void;
 

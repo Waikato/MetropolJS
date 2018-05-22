@@ -106,17 +106,21 @@ export class BorderedRectangleModelLayer implements ModelLayer {
   }
 
   updateGeometryVisitAmount(
-      rectUpdate: RectangleUpdatePointer, visitAmount: number): void {
+      rectUpdate: RectangleUpdatePointer, visitAmount: number,
+      poiAmount: number): void {
     if (this.enableLineLayer && this.lineLayer) {
-      this.lineLayer.updateGeometryVisitAmount(rectUpdate, visitAmount);
+      this.lineLayer.updateGeometryVisitAmount(
+          rectUpdate, visitAmount, poiAmount);
     }
 
     if (this.enableWallLayer && this.wallLayer) {
-      this.wallLayer.updateGeometryVisitAmount(rectUpdate, visitAmount);
+      this.wallLayer.updateGeometryVisitAmount(
+          rectUpdate, visitAmount, poiAmount);
     }
 
     if (this.enableSolidLayer && this.solidLayer) {
-      this.solidLayer.updateGeometryVisitAmount(rectUpdate, visitAmount);
+      this.solidLayer.updateGeometryVisitAmount(
+          rectUpdate, visitAmount, poiAmount);
     }
   }
 

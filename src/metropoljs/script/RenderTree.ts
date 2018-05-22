@@ -31,6 +31,8 @@ export class RenderTree {
 
   count: number = 0;
 
+  poiCount: number = 0;
+
   constructor(
       public type: string,
       public location: Rectangle,

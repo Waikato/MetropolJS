@@ -1,5 +1,6 @@
 varying float vColorAmount;
 varying float vVisitAmount;
+varying float vPoiAmount;
 
 uniform float maxAmount;
 
@@ -23,5 +24,7 @@ void main() {
   vec3 finalColor =
       (vVisitAmount < 1.0) ? hsvBase : normalize(hsvBase * hsvAdd);
 
-  gl_FragColor = vec4(finalColor, 0.5);
+  gl_FragColor = vPoiAmount > 0.0
+                     ? vec4(0.0, 0.0, 0.0, 1.0)
+                     : vec4(finalColor, vVisitAmount > 0.0 ? 0.5 : 0.2);
 }

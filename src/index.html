@@ -5,58 +5,129 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono:300|Roboto+Slab:300|Roboto:300" rel="stylesheet">
+
     <title>MetropolJS</title>
 
     <style>
-        * {
-            padding: 0;
-            margin: 0;
-        }
-        
         html,
         body,
         #main {
+            padding: 0;
+            margin: 0;
             width: 100%;
             height: 100%;
             overflow: hidden;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 300;
         }
-        
+
         #controls {
+            z-index: 10;
             display: block;
             position: fixed;
             top: 0;
-            left: 0;
+            right: 0;
+            bottom: 0;
             padding: 10px;
-            width: 350px;
-            height: 500px;
-            border: 1px solid black;
-            font-family: monospace;
+            padding-top: 30px;
+            width: 370px;
+            font-family: 'Roboto Mono', monospace;
             background-color: #101010;
             color: #eaeaea;
+            overflow-y: scroll;
+            pointer-events: all;
         }
-        
+
         h1>small {
+            font-family: 'Roboto', sans-serif;
+
             font-weight: normal;
             font-size: 70%;
+            color: #eaeaea;
         }
-        
+
         h1 {
+            font-family: 'Roboto Slab', serif;
+            color: #f9bb3f;
             font-size: 145%;
-            text-decoration: underline;
+        }
+
+        h2 {
+            font-size: 110%;
+        }
+
+        #controlsToggle {
+            z-index: 100;
+            position: fixed;
+            top: 10px;
+            right: 40px;
+            color: #101010;
+            background-color: #eaeaea;
+            padding: 5px;
+        }
+
+        #interpreterControls a {
+            font-family: 'Roboto', sans-serif;
+            color: #eaeaea;
+            padding: 5px;
+            border: 1px solid #505050;
+        }
+
+        #interpreterControls>div {
+            margin-top: 20px;
+        }
+
+        #controls>div {
+            padding: 5px;
+            margin: 5px 10px;
+            border: 1px solid #505050;
+        }
+
+        #controls>div>h2 {
+            margin-top: 2px;
         }
     </style>
 </head>
 
 <body>
-    <!-- <div id="controls">
-        <h1>MetropolJS <small>CROW, University of Waikato</small></h1>
-    </div> -->
+    <a href="#" id="controlsToggle">Show Controls</a>
+    <div id="controls" style="visibility: hidden;">
+        <h1>MetropolJS
+            <small>CROW, University of Waikato</small>
+        </h1>
+        <div>
+            <h2>Loaded Scripts: </h2>
+            <ul id="loadedScriptList">
+
+            </ul>
+        </div>
+        <div id="interpreterControls" style="display: none;">
+            <h2>Interpreter Controls: </h2>
+
+            <div>
+                <a href="#" id="interpreterStart">Start</a>
+                <a href="#" id="interpreterStop">Stop</a>
+            </div>
+            <div>
+                <h2>Current Steps:</h2>
+                <span id="interpreterCurrentSteps">0</span>
+            </div>
+
+            <div>
+                <strong>Current Speed:</strong>
+                <input type="text" id="interpreterSpeed" value="0">
+                <button id="interpreterChangeSpeed">Change Speed</button>
+            </div>
+        </div>
+    </div>
 
     <div id="main">
 
     </div>
 
-    <script src="./index.ts"></script>
+    <script src="./index.ts "></script>
 </body>
 
 </html>

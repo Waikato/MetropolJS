@@ -7,9 +7,18 @@ export interface ScriptLoadedEvent {
 
   scriptId: string;
   program: estree.Program;
+  filename: string;
 }
 
 export interface ScriptStepNotifyEvent {
+  dbg: AbstractDebugger;
+
+  scriptId: string;
+  node: estree.Node;
+  count: number;
+}
+
+export interface ScriptPOINotifyEvent {
   dbg: AbstractDebugger;
 
   scriptId: string;
@@ -22,6 +31,12 @@ export interface ScriptStackNotifyEvent {
 
   scriptId: string;
   stack: estree.Node[];
+}
+
+export interface DebuggerConnectedEvent {
+  dbg: AbstractDebugger;
+
+  type: 'v8'|'interpreter';
 }
 
 export abstract class AbstractDebugger implements DebugSource {

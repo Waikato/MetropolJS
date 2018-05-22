@@ -5,6 +5,8 @@ require('babel-polyfill');
 
 import {Config} from './metropoljs/Config';
 import {MetropolJSElement} from './metropoljs/MetropolJSElement';
+import {ScriptLoadedEvent, DebuggerConnectedEvent} from './metropoljs/debugger/AbstractDebugger';
+import {expect} from './metropoljs/common';
 
 let metropolJS: MetropolJSElement|null = null;
 
@@ -17,6 +19,33 @@ function onLoadedConfig() {
 
   metropolJS = new MetropolJSElement(document);
 
+  metropolJS.getEventBus().addListener(
+      'script.loaded', (ev: ScriptLoadedEvent) => {
+        const loadedScriptList =
+            document.querySelector('#loadedScriptList') || expect();
+        const newElement = document.createElement('li');
+        newElement.innerText = ev.filename;
+        loadedScriptList.appendChild(newElement);
+      });
+
+  metropolJS.getEventBus().addListener(
+      'debugger.connected', (ev: DebuggerConnectedEvent) => {
+        if (ev.type === 'v8') {
+          return;
+        }
+
+        const interpreterControls: HTMLDivElement =
+            document.querySelector('#interpreterControls') || expect();
+
+        interpreterControls.style.display = 'block';
+      });
+
+  const controlsElement = document.querySelector('#controlsToggle') || expect();
+
+  controlsElement.addEventListener('click', () => {
+    toggleControls();
+  });
+
   metropolJS.attachTo(mainElement);
 
   const configObject = Config.getInstance().getConfig();
@@ -27,6 +56,20 @@ function onLoadedConfig() {
     metropolJS.connect('interpreter', configObject.debugger.connect);
   } else {
     throw new Error('Debugger type not found');
+  }
+}
+
+function toggleControls() {
+  const controls: HTMLDivElement =
+      document.querySelector('#controls') || expect();
+  const controlsElement: HTMLAnchorElement =
+      document.querySelector('#controlsToggle') || expect();
+  if (controls.style.visibility === 'hidden') {
+    controlsElement.innerText = 'Hide Controls';
+    controls.style.visibility = 'visible';
+  } else {
+    controlsElement.innerText = 'Show Controls';
+    controls.style.visibility = 'hidden';
   }
 }
 
@@ -51,9 +94,9 @@ document.addEventListener('DOMContentLoaded', () => {
   fetch('/dist/config.js')
       .then((resp) => {
         if (resp.status === 404) {
-        console.error('loading default config');
-        loadDefaultConfig();
-        return "";
+          console.error('loading default config');
+          loadDefaultConfig();
+          return '';
         }
         return resp.text()
       })

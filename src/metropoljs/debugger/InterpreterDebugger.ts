@@ -3,7 +3,7 @@ import * as estree from 'estree';
 
 import {EventBus} from '../EventBus';
 
-import {AbstractDebugger, ScriptLoadedEvent, ScriptStackNotifyEvent, ScriptStepNotifyEvent} from './AbstractDebugger';
+import {AbstractDebugger, DebuggerConnectedEvent, ScriptLoadedEvent, ScriptPOINotifyEvent, ScriptStackNotifyEvent, ScriptStepNotifyEvent} from './AbstractDebugger';
 import {Interpreter} from './interpreter/interpreter';
 
 interface InterpreterScript {
@@ -49,6 +49,8 @@ export class InterpreterDebugger extends AbstractDebugger {
 
   private loadedProgram: estree.Program|null = null;
 
+  private speed: number = 0.1;
+
   constructor(private eventBus: EventBus) {
     super();
   }
@@ -73,10 +75,41 @@ export class InterpreterDebugger extends AbstractDebugger {
       this.eventBus.emit(`interpreter.${name}`, ...args);
     });
 
+    this.eventBus.addListener(
+        'interpreter.assignmentSet', (left: any, right: any) => {
+          const obj: any = left[0];
+          const propName: string = left[1];
+          if (!(obj && obj.properties)) {
+            return;
+          }
+
+          const oldValue = obj.properties[propName];
+          if (!(oldValue && oldValue.class === 'Function')) {
+            return;
+          }
+
+          if (!this.interpreter) {
+            return;
+          }
+
+          const currentNode = this.interpreter.getCurrentNode();
+
+          this.eventBus.emit(
+              'script.poiNotify',
+              {dbg: this, scriptId: '0', node: currentNode, count: 1} as
+                  ScriptPOINotifyEvent);
+        });
+
+    this.eventBus.emit('script.loaded', {
+      dbg: this,
+      program: this.loadedProgram,
+      filename: scriptName,
+      scriptId: '0'
+    } as ScriptLoadedEvent);
+
     this.eventBus.emit(
-        'script.parsed',
-        {dbg: this, program: this.loadedProgram, scriptId: '0'} as
-            ScriptLoadedEvent);
+        'debugger.connected',
+        {dbg: this, type: 'interpreter'} as DebuggerConnectedEvent);
   }
 
   async start(): Promise<never> {
@@ -103,7 +136,11 @@ export class InterpreterDebugger extends AbstractDebugger {
           {dbg: this, scriptId: '0', stack: currentStack} as
               ScriptStackNotifyEvent);
 
-      setImmediate(stepFunction.bind(this));
+      if (this.speed === 0) {
+        setImmediate(stepFunction.bind(this));
+      } else {
+        setTimeout(stepFunction.bind(this), this.speed);
+      }
     };
 
     stepFunction();

@@ -54,7 +54,8 @@ export class WallModelLayer extends BufferGeometryModelLayer {
   }
 
   updateGeometryVisitAmount(
-      rectUpdate: RectangleUpdatePointer, visitAmount: number): void {}
+      rectUpdate: RectangleUpdatePointer, visitAmount: number,
+      poiAmount: number): void {}
 
   private _emitRectangle(
       topLeftVert: number, topRightVert: number, bottomLeftVert: number,

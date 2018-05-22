@@ -37,7 +37,8 @@ export class MetropolJSElement implements DebugSource {
 
     this.renderer = new THREE.WebGLRenderer({antialias: true});
     this.scene = new THREE.Scene();
-    this.controls = new MetropolJSCameraControls(this.eventBus);
+    this.controls =
+        new MetropolJSCameraControls(this.eventBus, this.renderer.domElement);
 
     this.session = new MetropolJSSession(this.eventBus);
 
@@ -66,6 +67,10 @@ export class MetropolJSElement implements DebugSource {
     this.renderer.setClearColor(new THREE.Color(0xffffff));
 
     this.stats = new (require('stats.js'))();
+  }
+
+  getEventBus(): EventBus {
+    return this.eventBus;
   }
 
   attachTo(target: HTMLDivElement) {

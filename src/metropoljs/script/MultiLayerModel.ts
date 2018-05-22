@@ -101,7 +101,7 @@ export class MultiLayerModel implements RenderGroup, DebugSource {
 
   updateVisitAmount(
       layer: number, rectUpdate: RectangleUpdatePointer, visitAmount: number,
-      maxAmount: number) {
+      poiAmount: number, maxAmount: number) {
     const modelLayer = this.getLayer(layer);
 
     this.maxAmount = Math.max(maxAmount, this.maxAmount);
@@ -110,7 +110,7 @@ export class MultiLayerModel implements RenderGroup, DebugSource {
       layer.setMaxAmount(this.maxAmount);
     });
 
-    modelLayer.updateGeometryVisitAmount(rectUpdate, visitAmount);
+    modelLayer.updateGeometryVisitAmount(rectUpdate, visitAmount, poiAmount);
   }
 
   /**
