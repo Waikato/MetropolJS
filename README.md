@@ -1,7 +1,12 @@
 # MetropolJS
 
+
 **Paper PDF**: [docs/paper/metropolJS.pdf](docs/paper/metropolJS.pdf)
+
 **Live Demo**: https://waikato.github.io/MetropolJS/
+
+![Header Image](img/headerImage.png)
+
 
 ## Introduction
 
