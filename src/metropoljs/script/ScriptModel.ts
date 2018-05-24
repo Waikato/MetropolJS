@@ -58,7 +58,7 @@ export class ScriptModel implements RenderGroup {
     this.group.add(this.overlayRenderer.getRenderGroup());
   }
 
-  load(scriptList: RenderScript[]) {
+  load(scriptList: RenderScript[], noTimeout = false) {
     const renderStep = () => {
       if (this.renderQueue.length > 0) {
         this.renderAllTasks();
@@ -89,6 +89,12 @@ export class ScriptModel implements RenderGroup {
           rootNode, script.tree, getNodeChildren(rootNode), nodes, 0,
           rootRectangle);
     });
+
+    if (noTimeout) {
+      while (this.renderQueue.length > 0) {
+        this.renderAllTasks();
+      }
+    }
 
     renderStep();
   }
@@ -129,7 +135,7 @@ export class ScriptModel implements RenderGroup {
       }
       return tree;
     } else {
-      throw new Error('Multiple script are loaded.');
+      throw new Error('Multiple scripts are loaded.');
     }
   }
 

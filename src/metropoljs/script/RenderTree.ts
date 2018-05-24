@@ -33,11 +33,15 @@ export class RenderTree {
 
   poiCount: number = 0;
 
+  baseRectangle: Rectangle;
+
   constructor(
       public type: string,
       public location: Rectangle,
       public depth: number,
-  ) {}
+  ) {
+    this.baseRectangle = location;
+  }
 
   /**
    * Does this bounding box contain a given point.RenderTree

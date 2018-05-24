@@ -9,10 +9,17 @@ import {Config} from '../Config';
 import {BorderedRectangleModelLayer} from './BorderedRectangleModelLayer';
 import {ModelLayer, RectangleUpdatePointer} from './ModelLayer';
 
-const VERTEX_SHADER_SOURCE: string =
-    require('fs').readFileSync(__dirname + '/shader/model.vert', 'utf8');
-const FRAGMENT_SHADER_SOURCE: string =
-    require('fs').readFileSync(__dirname + '/shader/model.frag', 'utf8');
+let VERTEX_SHADER_SOURCE: string;
+let FRAGMENT_SHADER_SOURCE: string;
+
+try {
+  VERTEX_SHADER_SOURCE =
+      require('fs').readFileSync(__dirname + '/shader/model.vert', 'utf8');
+  FRAGMENT_SHADER_SOURCE =
+      require('fs').readFileSync(__dirname + '/shader/model.frag', 'utf8');
+} catch {
+  console.error('Failed loading shaders');
+}
 
 /**
  * Container class and abstract interface for a model with a series of different
