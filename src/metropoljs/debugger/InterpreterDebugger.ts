@@ -11,38 +11,42 @@ interface InterpreterScript {
   text: string;
 }
 
-const BUILTIN_SCRIPTS: InterpreterScript[] = [
-  {
-    name: 'jQuery',
-    text: require('fs').readFileSync(
-        __dirname + '/interpreter/interpreter_data/jquery-3.2.1.min.js', 'utf8')
-  },
-  {
-    name: 'lodash',
-    text: require('fs').readFileSync(
-        __dirname + '/interpreter/interpreter_data/lodash.min.js', 'utf8')
-  },
-  {
-    name: 'moment',
-    text: require('fs').readFileSync(
-        __dirname + '/interpreter/interpreter_data/moment.min.js', 'utf8')
-  },
-  {
-    name: 'underscore',
-    text: require('fs').readFileSync(
-        __dirname + '/interpreter/interpreter_data/underscore.min.js', 'utf8')
-  },
-  {
-    name: 'underscore_test',
-    text: require('fs').readFileSync(
-        __dirname + '/interpreter/interpreter_data/underscore_test.js', 'utf8')
-  },
-  {
-    name: 'richards',
-    text: require('fs').readFileSync(
-        __dirname + '/interpreter/interpreter_data/richards.js', 'utf8')
-  }
-];
+let BUILTIN_SCRIPTS: InterpreterScript[] = [{
+  name: 'underscore_test',
+  text: require('fs').readFileSync(
+      __dirname + '/interpreter/interpreter_data/underscore_test.js', 'utf8')
+}];
+
+if (process.env.DEMO !== 'y') {
+  BUILTIN_SCRIPTS.push(
+      {
+        name: 'jQuery',
+        text: require('fs').readFileSync(
+            __dirname + '/interpreter/interpreter_data/jquery-3.2.1.min.js',
+            'utf8')
+      },
+      {
+        name: 'lodash',
+        text: require('fs').readFileSync(
+            __dirname + '/interpreter/interpreter_data/lodash.min.js', 'utf8')
+      },
+      {
+        name: 'moment',
+        text: require('fs').readFileSync(
+            __dirname + '/interpreter/interpreter_data/moment.min.js', 'utf8')
+      },
+      {
+        name: 'underscore',
+        text: require('fs').readFileSync(
+            __dirname + '/interpreter/interpreter_data/underscore.min.js',
+            'utf8')
+      },
+      {
+        name: 'richards',
+        text: require('fs').readFileSync(
+            __dirname + '/interpreter/interpreter_data/richards.js', 'utf8')
+      });
+}
 
 export class InterpreterDebugger extends AbstractDebugger {
   private interpreter: Interpreter|null = null;
