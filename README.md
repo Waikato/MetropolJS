@@ -1,5 +1,6 @@
 # MetropolJS
 
+**Contact Email**: jds30@students.waikato.ac.nz
 
 **Paper PDF**: [docs/paper/metropolJS.pdf](docs/paper/metropolJS.pdf)
 
