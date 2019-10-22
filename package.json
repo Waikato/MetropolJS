@@ -26,7 +26,7 @@
         "@types/three": "^0.89.10",
         "@types/ws": "^4.0.1",
         "gts": "^0.5.3",
-        "parcel-bundler": "^1.6.2",
+        "parcel-bundler": "^1.10.0",
         "typescript": "~2.6.1"
     },
     "dependencies": {
