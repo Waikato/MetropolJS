@@ -30,7 +30,7 @@
         "typescript": "~2.6.1"
     },
     "dependencies": {
-        "acorn": "^5.5.3",
+        "acorn": "^5.7.4",
         "chrome-remote-debug-protocol": "^1.2.20170721",
         "esprima": "^4.0.0",
         "isomorphic-ws": "^4.0.0",
