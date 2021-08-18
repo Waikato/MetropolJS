@@ -37,7 +37,7 @@
         "noice-json-rpc": "^1.1.1",
         "stats.js": "^0.17.0",
         "three": "^0.125.0",
-        "ws": "^4.1.0",
+        "ws": "^5.2.3",
         "babel-preset-env": "^1.6.1",
         "babel-polyfill": "^6.26.0"
     }
