@@ -97,9 +97,26 @@ loadMetropolJSConfig({
 
 ## Citing MetropolJS
 
-    TODO: Put the citation once the paper is published.
+https://dl.acm.org/doi/10.1145/3196321.3196368
 
-Publication is currently pending at ICPC2018.
+```bibtex
+@inproceedings{10.1145/3196321.3196368,
+  author = {Scarsbrook, Joshua D and Ko, Ryan K L and Rogers, Bill and Bainbridge, David},
+  title = {MetropolJS: Visualizing and Debugging Large-Scale Javascript Program Structure with Treemaps},
+  year = {2018},
+  isbn = {9781450357142},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  url = {https://doi.org/10.1145/3196321.3196368},
+  doi = {10.1145/3196321.3196368},
+  booktitle = {Proceedings of the 26th Conference on Program Comprehension},
+  pages = {389–392},
+  numpages = {4},
+  keywords = {treemaps, javascript, debugging},
+  location = {Gothenburg, Sweden},
+  series = {ICPC '18}
+}
+```
 
 ## Licence
 
